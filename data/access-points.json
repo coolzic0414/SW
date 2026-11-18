@@ -1,0 +1,383 @@
+{
+  "_what": "도로명주소 부번의 좌표. 건물의 대표 지점이며 출입구가 아니다.",
+  "_verified": "17개 중 14개가 건물 폴리곤 안쪽(최대 22m)에 찍혀 있어 출입구로 볼 수 없음을 확인했다.",
+  "_use": "경로가 건물에 드나드는 지점의 근사치로만 쓴다. 안내문에 '정문/후문' 같은 말을 붙이지 않는다.",
+  "_source": "카카오 주소검색 API (dapi.kakao.com/v2/local/search/address.json)",
+  "_road": "충남 아산시 신창면 순천향로 22",
+  "access_points": [
+    {
+      "code": "6",
+      "name": "인문과학관",
+      "address": "순천향로 22-1",
+      "at": [
+        36.768354,
+        126.9274795
+      ],
+      "meters_from_edge": 22.0,
+      "inside_polygon": true,
+      "source": "address"
+    },
+    {
+      "code": "L",
+      "name": "향설도서관",
+      "address": "순천향로 22-2",
+      "at": [
+        36.7686677,
+        126.9307045
+      ],
+      "meters_from_edge": 3.6,
+      "inside_polygon": true,
+      "source": "address"
+    },
+    {
+      "code": "9",
+      "name": "공학관",
+      "address": "순천향로 22-3",
+      "at": [
+        36.7691889,
+        126.9321559
+      ],
+      "meters_from_edge": 14.2,
+      "inside_polygon": true,
+      "source": "address"
+    },
+    {
+      "code": "9",
+      "name": "공학관",
+      "address": "순천향로 22-4",
+      "at": [
+        36.7694871,
+        126.9327072
+      ],
+      "meters_from_edge": 10.4,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "RC",
+      "name": "향설생활관1",
+      "address": "순천향로 22-5",
+      "at": [
+        36.7684485,
+        126.9321507
+      ],
+      "meters_from_edge": 11.2,
+      "inside_polygon": true,
+      "source": "address"
+    },
+    {
+      "code": "U",
+      "name": "유니토피아관",
+      "address": "순천향로 22-6",
+      "at": [
+        36.7689723,
+        126.9332287
+      ],
+      "meters_from_edge": 6.1,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "B",
+      "name": "산학협력관",
+      "address": "순천향로 22-7",
+      "at": [
+        36.7699597,
+        126.9333464
+      ],
+      "meters_from_edge": 7.7,
+      "inside_polygon": true,
+      "source": "address"
+    },
+    {
+      "code": "C",
+      "name": "지역혁신관",
+      "address": "순천향로 22-8",
+      "at": [
+        36.7703922,
+        126.9340275
+      ],
+      "meters_from_edge": 2.5,
+      "inside_polygon": true,
+      "source": "address"
+    },
+    {
+      "code": "H",
+      "name": "학예관",
+      "address": "순천향로 22-10",
+      "at": [
+        36.7695958,
+        126.9342732
+      ],
+      "meters_from_edge": 13.5,
+      "inside_polygon": true,
+      "source": "address"
+    },
+    {
+      "code": "ML",
+      "name": "SCH미디어랩스관",
+      "address": "순천향로 22-19",
+      "at": [
+        36.7721467,
+        126.9316797
+      ],
+      "meters_from_edge": 2.9,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "1",
+      "name": "의료과학관",
+      "address": "순천향로 22-20",
+      "at": [
+        36.7711513,
+        126.9320777
+      ],
+      "meters_from_edge": 6.6,
+      "inside_polygon": true,
+      "source": "address"
+    },
+    {
+      "code": "7",
+      "name": "교육과학관",
+      "address": "순천향로 22-22",
+      "at": [
+        36.7707393,
+        126.93305
+      ],
+      "meters_from_edge": 7.8,
+      "inside_polygon": true,
+      "source": "address"
+    },
+    {
+      "code": "2",
+      "name": "국제교류관",
+      "address": "순천향로 22-23",
+      "at": [
+        36.770595,
+        126.9325638
+      ],
+      "meters_from_edge": 6.9,
+      "inside_polygon": true,
+      "source": "address"
+    },
+    {
+      "code": "5",
+      "name": "I'Design관",
+      "address": "순천향로 22-24",
+      "at": [
+        36.7705243,
+        126.9322927
+      ],
+      "meters_from_edge": 4.2,
+      "inside_polygon": true,
+      "source": "address"
+    },
+    {
+      "code": "3",
+      "name": "자연과학관",
+      "address": "순천향로 22-26",
+      "at": [
+        36.7695582,
+        126.9301046
+      ],
+      "meters_from_edge": 5.2,
+      "inside_polygon": true,
+      "source": "address"
+    },
+    {
+      "code": "G",
+      "name": "실내체육관",
+      "address": "순천향로 22-27",
+      "at": [
+        36.7705221,
+        126.9303348
+      ],
+      "meters_from_edge": 16.0,
+      "inside_polygon": true,
+      "source": "address"
+    },
+    {
+      "code": "R",
+      "name": "학군단",
+      "address": "순천향로 22-28",
+      "at": [
+        36.7713214,
+        126.9308815
+      ],
+      "meters_from_edge": 4.5,
+      "inside_polygon": true,
+      "source": "address"
+    }
+  ],
+  "rejected": [
+    {
+      "code": "C",
+      "name": "지역혁신관",
+      "address": "순천향로 22-9",
+      "at": [
+        36.7702549,
+        126.9341548
+      ],
+      "meters_from_edge": 16.3,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "H",
+      "name": "학예관",
+      "address": "순천향로 22-11",
+      "at": [
+        36.7689992,
+        126.9348382
+      ],
+      "meters_from_edge": 47.9,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "U",
+      "name": "유니토피아관",
+      "address": "순천향로 22-12",
+      "at": [
+        36.7688209,
+        126.9341293
+      ],
+      "meters_from_edge": 40.1,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "U",
+      "name": "유니토피아관",
+      "address": "순천향로 22-13",
+      "at": [
+        36.7677302,
+        126.9345111
+      ],
+      "meters_from_edge": 161.9,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "RC",
+      "name": "향설생활관1",
+      "address": "순천향로 22-14",
+      "at": [
+        36.7672269,
+        126.933735
+      ],
+      "meters_from_edge": 160.6,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "RC",
+      "name": "향설생활관1",
+      "address": "순천향로 22-15",
+      "at": [
+        36.7678562,
+        126.9334921
+      ],
+      "meters_from_edge": 90.1,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "C",
+      "name": "지역혁신관",
+      "address": "순천향로 22-16",
+      "at": [
+        36.7713719,
+        126.9341338
+      ],
+      "meters_from_edge": 86.3,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "7",
+      "name": "교육과학관",
+      "address": "순천향로 22-17",
+      "at": [
+        36.7717675,
+        126.9336092
+      ],
+      "meters_from_edge": 101.8,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "ML",
+      "name": "SCH미디어랩스관",
+      "address": "순천향로 22-18",
+      "at": [
+        36.7723271,
+        126.9334332
+      ],
+      "meters_from_edge": 120.4,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "7",
+      "name": "교육과학관",
+      "address": "순천향로 22-21",
+      "at": [
+        36.7711366,
+        126.9335661
+      ],
+      "meters_from_edge": 40.3,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "3",
+      "name": "자연과학관",
+      "address": "순천향로 22-25",
+      "at": [
+        36.7699886,
+        126.9314582
+      ],
+      "meters_from_edge": 55.6,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "R",
+      "name": "학군단",
+      "address": "순천향로 22-29",
+      "at": [
+        36.7713371,
+        126.930475
+      ],
+      "meters_from_edge": 19.8,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "3",
+      "name": "자연과학관",
+      "address": "순천향로 22-30",
+      "at": [
+        36.7697671,
+        126.9293492
+      ],
+      "meters_from_edge": 44.4,
+      "inside_polygon": false,
+      "source": "address"
+    },
+    {
+      "code": "6",
+      "name": "인문과학관",
+      "address": "순천향로 22-31",
+      "at": [
+        36.7694089,
+        126.927777
+      ],
+      "meters_from_edge": 75.8,
+      "inside_polygon": false,
+      "source": "address"
+    }
+  ]
+}

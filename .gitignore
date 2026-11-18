@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.local
+.DS_Store
+.vercel
+.env*
+!.env.example
+# 도구 스크립트의 중간 산출물(스크린샷 등) — OUT_DIR 기본값
+tmp/
+__pycache__/
+*.tsbuildinfo

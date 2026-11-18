@@ -1,0 +1,206 @@
+{
+  "_source": "https://sgee.sch.ac.kr/usupport/guide09.php (순천향대 국제교육교류처 강의실코드, 2026-11-12 확인) + 교내 캠퍼스맵 강의실코드판 (국제교류관.2 추가)",
+  "_note": "aliases 는 학생들이 실제로 쓰는 호칭. 추정값이 섞여 있으므로 재학생이 검수할 것.",
+  "buildings": [
+    {
+      "code": "1",
+      "name": "의료과학관",
+      "osm_name": "의료과학대",
+      "aliases": [
+        "의과관",
+        "의료과학대"
+      ]
+    },
+    {
+      "code": "2",
+      "name": "국제교류관",
+      "osm_name": "국제교류처",
+      "aliases": [],
+      "_note": "국제교류교류처 코드표 이미지에는 없고 교내 캠퍼스맵(강의실코드판)에만 있음"
+    },
+    {
+      "code": "3",
+      "name": "자연과학관",
+      "osm_name": "자연과학대학",
+      "aliases": [
+        "자연대"
+      ]
+    },
+    {
+      "code": "5",
+      "name": "I'Design관",
+      "osm_name": "아이디자인관",
+      "aliases": [
+        "아이디자인"
+      ]
+    },
+    {
+      "code": "6",
+      "name": "인문과학관",
+      "osm_name": "인문과학대학",
+      "aliases": [
+        "인문관"
+      ]
+    },
+    {
+      "code": "7",
+      "name": "교육과학관",
+      "osm_name": "교육과학관",
+      "aliases": [
+        "교과관"
+      ]
+    },
+    {
+      "code": "9",
+      "name": "공학관",
+      "osm_name": "공과대학",
+      "aliases": []
+    },
+    {
+      "code": "B",
+      "name": "산학협력관",
+      "osm_name": "산학협력관",
+      "aliases": []
+    },
+    {
+      "code": "BI",
+      "name": "BRIX관",
+      "osm_name": null,
+      "aliases": [
+        "브릭스",
+        "브릭스관"
+      ]
+    },
+    {
+      "code": "C",
+      "name": "지역혁신관",
+      "osm_name": "지역혁신관",
+      "aliases": []
+    },
+    {
+      "code": "G",
+      "name": "실내체육관",
+      "osm_name": "체육관",
+      "aliases": [
+        "체육관"
+      ]
+    },
+    {
+      "code": "H",
+      "name": "학예관",
+      "osm_name": "학예관",
+      "aliases": []
+    },
+    {
+      "code": "L",
+      "name": "향설도서관",
+      "osm_name": "도서관",
+      "aliases": [
+        "중앙도서관",
+        "도서관"
+      ]
+    },
+    {
+      "code": "M",
+      "name": "멀티미디어관",
+      "osm_name": null,
+      "aliases": []
+    },
+    {
+      "code": "ML",
+      "name": "SCH미디어랩스관",
+      "osm_name": "미디어랩스",
+      "aliases": [
+        "미랩"
+      ]
+    },
+    {
+      "code": "R",
+      "name": "학군단",
+      "osm_name": "학군단",
+      "aliases": []
+    },
+    {
+      "code": "RC",
+      "name": "향설생활관1",
+      "osm_name": "향설생활관1",
+      "aliases": [
+        "향1"
+      ]
+    },
+    {
+      "code": "U",
+      "name": "유니토피아관",
+      "osm_name": "유니토피아관",
+      "aliases": [
+        "유니토피아"
+      ]
+    }
+  ],
+  "non_classroom": [
+    {
+      "code": "X000",
+      "name": "대운동장"
+    },
+    {
+      "code": "X001",
+      "name": "소운동장"
+    },
+    {
+      "code": "X002",
+      "name": "테니스코트1"
+    },
+    {
+      "code": "X003",
+      "name": "테니스코트2"
+    },
+    {
+      "code": "X004",
+      "name": "수영장"
+    },
+    {
+      "code": "X005",
+      "name": "골프장"
+    },
+    {
+      "code": "X006",
+      "name": "학내가상"
+    },
+    {
+      "code": "X008",
+      "name": "체육관"
+    },
+    {
+      "code": "X012",
+      "name": "유도장"
+    },
+    {
+      "code": "X013",
+      "name": "병원실습"
+    },
+    {
+      "code": "X014",
+      "name": "볼링장"
+    },
+    {
+      "code": "X015",
+      "name": "인턴십"
+    },
+    {
+      "code": "X016",
+      "name": "현장실습"
+    },
+    {
+      "code": "X017",
+      "name": "스쿼시장"
+    },
+    {
+      "code": "S/Y",
+      "name": "서울&천안 의학관"
+    },
+    {
+      "code": "E",
+      "name": "천안의대 교육관"
+    }
+  ]
+}

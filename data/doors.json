@@ -1,0 +1,514 @@
+{
+  "_what": "건물별 실제 출입구. 스카이뷰(1px≈0.25m)와 로드뷰를 같이 보고 찍었다.",
+  "_why": "OSM 에 entrance 태그가 0개고, 도로명주소 좌표는 건물 안쪽을 가리킨다. 공개 데이터가 없다.",
+  "_how": "로드뷰에서 문(유리문·캐노피·간판)이 보이는 방위각을 읽고, 촬영 지점에서 그은 방향선의 교차점 (또는 건물 외곽선과의 교점)으로 잡았다. 근거는 data/door-evidence.json. 로드뷰가 닿지 않는 문만 위성으로 찍고 confirmed:false 로 둔다.",
+  "_accuracy": "스카이뷰에서 집은 자리라 ±2m 정도 오차가 있다. 경로 안내에는 충분하다.",
+  "doors": [
+    {
+      "code": "1",
+      "at": [
+        36.7709072,
+        126.9322704
+      ],
+      "label": "남동문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "1",
+      "at": [
+        36.7712018,
+        126.9320707
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "1",
+      "at": [
+        36.7711212,
+        126.9319322
+      ],
+      "label": "측문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "2",
+      "at": [
+        36.7706824,
+        126.9326414
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "3",
+      "at": [
+        36.7699564,
+        126.9308039
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "satellite",
+      "confirmed": false
+    },
+    {
+      "code": "5",
+      "at": [
+        36.7704865,
+        126.9321978
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "5",
+      "at": [
+        36.7705517,
+        126.932362
+      ],
+      "label": "측문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "6",
+      "at": [
+        36.768463,
+        126.9277583
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "7",
+      "at": [
+        36.7707979,
+        126.9330024
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "9",
+      "at": [
+        36.7690607,
+        126.9322848
+      ],
+      "label": "남동문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "9",
+      "at": [
+        36.7695473,
+        126.9324837
+      ],
+      "label": "북측문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "9",
+      "at": [
+        36.7693647,
+        126.9320844
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "@교직원식당",
+      "at": [
+        36.7712149,
+        126.9335195
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "@글로벌빌리지",
+      "at": [
+        36.7674152,
+        126.9337318
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "@대학본부",
+      "at": [
+        36.7682415,
+        126.9290478
+      ],
+      "label": "남동문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "@대학본부",
+      "at": [
+        36.7684671,
+        126.9288755
+      ],
+      "label": "정문",
+      "accessible": true,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "@앙뜨레프레너관",
+      "at": [
+        36.7689938,
+        126.9341695
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "@학생회관",
+      "at": [
+        36.7699681,
+        126.9311235
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "satellite",
+      "confirmed": false
+    },
+    {
+      "code": "@학생회관",
+      "at": [
+        36.7701619,
+        126.9317041
+      ],
+      "label": "측문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "@학성사1",
+      "at": [
+        36.7723765,
+        126.9333661
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "kakao_icon",
+      "confirmed": false
+    },
+    {
+      "code": "@학성사2",
+      "at": [
+        36.7718592,
+        126.9335624
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "kakao_icon",
+      "confirmed": false
+    },
+    {
+      "code": "@학성사3",
+      "at": [
+        36.771279,
+        126.9340408
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "@향설생활관2",
+      "at": [
+        36.7678832,
+        126.9337067
+      ],
+      "label": "남동문",
+      "accessible": false,
+      "via": "satellite",
+      "confirmed": true
+    },
+    {
+      "code": "@향설생활관2",
+      "at": [
+        36.7679442,
+        126.9333265
+      ],
+      "label": "북서문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "@향설생활관3",
+      "at": [
+        36.7680623,
+        126.9350845
+      ],
+      "label": "동문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "@향설생활관3",
+      "at": [
+        36.7680282,
+        126.9347034
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "B",
+      "at": [
+        36.7699265,
+        126.933446
+      ],
+      "label": "남동문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "B",
+      "at": [
+        36.7700767,
+        126.9333408
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "BI",
+      "at": [
+        36.7701573,
+        126.9342355
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "C",
+      "at": [
+        36.7705865,
+        126.9342141
+      ],
+      "label": "북동문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "C",
+      "at": [
+        36.7704911,
+        126.9339823
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "G",
+      "at": [
+        36.7702568,
+        126.9304899
+      ],
+      "label": "연결통로",
+      "accessible": false,
+      "via": "satellite",
+      "confirmed": false
+    },
+    {
+      "code": "G",
+      "at": [
+        36.7707605,
+        126.9301959
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "H",
+      "at": [
+        36.7698378,
+        126.9343914
+      ],
+      "label": "동문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "H",
+      "at": [
+        36.7697208,
+        126.9339691
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "L",
+      "at": [
+        36.7688578,
+        126.9310369
+      ],
+      "label": "동문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "L",
+      "at": [
+        36.7688922,
+        126.9304957
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "M",
+      "at": [
+        36.7692446,
+        126.934668
+      ],
+      "label": "연결통로",
+      "accessible": false,
+      "via": "satellite",
+      "confirmed": false
+    },
+    {
+      "code": "M",
+      "at": [
+        36.7690501,
+        126.9350559
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "ML",
+      "at": [
+        36.7718019,
+        126.9317147
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "R",
+      "at": [
+        36.7712871,
+        126.9309417
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "RC",
+      "at": [
+        36.7683938,
+        126.9325329
+      ],
+      "label": "남문",
+      "accessible": false,
+      "via": "satellite",
+      "confirmed": true
+    },
+    {
+      "code": "RC",
+      "at": [
+        36.7687236,
+        126.9321485
+      ],
+      "label": "북문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "U",
+      "at": [
+        36.7694141,
+        126.9333279
+      ],
+      "label": "북문",
+      "accessible": false,
+      "via": "satellite",
+      "confirmed": false
+    },
+    {
+      "code": "U",
+      "at": [
+        36.7692678,
+        126.9330056
+      ],
+      "label": "서문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    },
+    {
+      "code": "U",
+      "at": [
+        36.7688342,
+        126.9334089
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
+    }
+  ]
+}
