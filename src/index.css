@@ -370,3 +370,6 @@
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
 .dark .map-credit { background: rgb(28 28 30 / .7); color: rgb(235 235 245 / .75); }
+
+/* PC 배치: 왼쪽 패널이 지도 왼쪽 아래를 덮으니 카카오 로고·축척을 패널 오른쪽으로 비킨다 */
+.side-layout .kakao-copy { left: 428px !important; }

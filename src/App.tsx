@@ -46,6 +46,23 @@ function useTheme(): [Theme, () => void] {
   return [theme, toggle];
 }
 
+/**
+ * 넓은 화면(PC·발표용 노트북)에서는 검색·정보를 왼쪽 400px 패널로 띄운다.
+ * 폰 배치(위 검색 카드 + 아래 바텀시트)를 그대로 늘리면 숫자가 양 끝으로 벌어진다.
+ * 구글·네이버·카카오 지도 웹도 왼쪽 패널 + 지도다. (Behance 'Store Finder Concept' 참고)
+ */
+function useSideLayout() {
+  const q = "(min-width: 900px)";
+  const [wide, setWide] = useState(() => window.matchMedia(q).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(q);
+    const f = () => setWide(mq.matches);
+    mq.addEventListener("change", f);
+    return () => mq.removeEventListener("change", f);
+  }, []);
+  return wide;
+}
+
 /** 지름길이 이만큼은 빨라야 '단축' 이라고 내세운다. 몇 초 차이를 자랑하면 오히려 신뢰가 깎인다. */
 const SHORTCUT_MIN_SAVED = 20;
 
@@ -135,6 +152,7 @@ const pinLabel = (b: { code: string; name: string }) =>
 
 export default function App() {
   const [theme, toggleTheme] = useTheme();
+  const side = useSideLayout();
   const { ref, map, error } = useKakaoMap(CAMPUS_CENTER, 4);
   const [query, setQuery] = useState("");   // 애플지도처럼 빈 상태에서 시작
   const [fromCode, setFromCode] = useState(HERE);   // 기본은 현재 위치에서 출발
@@ -188,12 +206,21 @@ export default function App() {
     return () => clearInterval(id);
   }, [map]);
 
+  // PC 는 화면이 넓어 기본 확대 수준이면 캠퍼스가 작다. 한 단계 확대하고,
+  // 왼쪽 패널(400px) 절반만큼 비켜서 캠퍼스가 남은 지도의 가운데에 오게 한다.
+  useEffect(() => {
+    if (!map || !side) return;
+    map.setLevel(3);
+    map.setCenter(new window.kakao.maps.LatLng(CAMPUS_CENTER[0], CAMPUS_CENTER[1]));
+    map.panBy(-200, 0);
+  }, [map, side]);
+
   const pickDestination = useCallback((code: string) => {
     setQuery(getBuilding(code)?.name ?? code);
     setSnap((s) => Math.max(s, 1)); // 지도를 찍었으면 결과를 보여줘야 한다
   }, []);
   useMapOverlays(map, route, fromHere ? startBuilding?.code ?? null : fromCode, toCode, snap, pickDestination,
-                 here, accuracy, fromHere, baseline, theme);
+                 here, accuracy, fromHere, baseline, theme, side);
 
   const swap = () => {
     if (!toCode) return;
@@ -238,87 +265,8 @@ export default function App() {
     : fromHere ? (status === "ok" ? "지금 위치에서 걸어서" : status === "finding" ? "현재 위치 찾는 중…" : "강의실 코드나 건물 이름을 입력하세요")
     : `${getBuilding(fromCode)?.name ?? ""}에서 걸어서`;
 
-  return (
-    <div className="relative h-dvh overflow-hidden bg-background">
-      <div className="map-tiles absolute inset-0 bg-muted" ref={ref} />
-
-      {error && (
-        <div className="glass absolute inset-x-4 top-1/3 z-30 rounded-[22px] p-5">
-          <p className="font-semibold">지도를 띄우지 못했습니다</p>
-          <p className="mt-1 text-sm text-muted-foreground">{error}</p>
-        </div>
-      )}
-
-      {/* 출발 · 도착 — 애플지도 경로 카드처럼 아이콘 원 + 가는 구분선 */}
-      <div className="absolute inset-x-2.5 top-[calc(env(safe-area-inset-top)+0.625rem)] z-20">
-        <div className="glass flex items-center gap-1 rounded-[22px] py-1 pr-1.5 pl-3">
-          <div className="min-w-0 flex-1">
-            <Row icon={<span className="grid size-[26px] place-items-center rounded-full bg-primary text-white">
-                         <Navigation className="size-3.5 fill-current" strokeWidth={0} /></span>}>
-              <Select value={fromCode} onValueChange={(v) => v && setFromCode(v)}>
-                <SelectTrigger
-                  aria-label="출발 건물"
-                  className="h-11 w-full border-0 bg-transparent px-0 text-[16px] font-medium shadow-none focus-visible:ring-0 dark:bg-transparent [&>svg]:hidden"
-                >
-                  <SelectValue>
-                    {fromHere && status !== "ok" ? (status === "finding" ? "현재 위치 찾는 중…" : "현재 위치 (사용 불가)")
-                                                 : originName || "건물 선택"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl">
-                  <SelectItem value={HERE}>
-                    <Navigation className="size-3.5 fill-primary text-primary" strokeWidth={0} /> 현재 위치
-                  </SelectItem>
-                  {buildings.map((b) => (
-                    <SelectItem key={b.code} value={b.code}>
-                      {b.name} <span className="text-muted-foreground">{b.code.startsWith("@") ? "" : b.code}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Row>
-            <div className="ml-[38px] h-px bg-border" />
-            <Row icon={<span className="grid size-[26px] place-items-center rounded-full bg-destructive text-white">
-                         <MapPin className="size-3.5" strokeWidth={2.6} /></span>}>
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="강의실 코드나 건물 (U524, 공학관)"
-                aria-label="목적지 강의실"
-                autoComplete="off"
-                className="h-11 border-0 bg-transparent px-0 !text-[16px] font-medium shadow-none placeholder:text-muted-foreground placeholder:font-normal focus-visible:ring-0 dark:bg-transparent"
-              />
-            </Row>
-          </div>
-          <button onClick={swap} aria-label="출발지와 목적지 바꾸기"
-                  className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-foreground/70 active:scale-95">
-            <ArrowUpDown className="size-[17px]" strokeWidth={2.2} />
-          </button>
-        </div>
-
-        {/* 지도 버튼 — 애플지도처럼 오른쪽 위 유리 원 */}
-        <div className="mt-2.5 flex justify-end">
-          {/* 애플지도처럼 버튼 둘을 한 유리 캡슐에 세로로 묶는다 */}
-          <div className="glass flex flex-col overflow-hidden rounded-full">
-            <button
-              onClick={locate} disabled={locating} aria-label="현재 위치에서 출발"
-              className="grid size-11 place-items-center active:bg-muted"
-            >
-              <Navigation
-                className={`size-[19px] ${fromHere && status === "ok" ? "fill-primary text-primary" : "text-primary"} ${locating ? "animate-pulse" : ""}`}
-                strokeWidth={fromHere && status === "ok" ? 0 : 2.2}
-              />
-            </button>
-            <div className="mx-2.5 h-px bg-border" />
-            <button onClick={toggleTheme} aria-label={theme === "dark" ? "밝은 지도로" : "어두운 지도로"}
-                    className="grid size-11 place-items-center text-foreground/75 active:bg-muted">
-              {theme === "dark" ? <Sun className="size-[19px]" strokeWidth={2.2} /> : <Moon className="size-[18px]" strokeWidth={2.2} />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <Sheet snap={snap} setSnap={setSnap}>
+  const sheetBody = (
+      <>
         {/* 제목 + 닫기 — 애플지도 시트 머리 */}
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
@@ -371,15 +319,105 @@ export default function App() {
         {dest && <Roadview at={dest.center} label={dest.name} />}
 
         {steps.length > 0 && <StepList steps={steps} />}
-      </Sheet>
+      </>
+  );
+
+  return (
+    <div className={`relative h-dvh overflow-hidden bg-background ${side ? "side-layout" : ""}`}>
+      <div className="map-tiles absolute inset-0 bg-muted" ref={ref} />
+
+      {error && (
+        <div className="glass absolute inset-x-4 top-1/3 z-30 rounded-[22px] p-5">
+          <p className="font-semibold">지도를 띄우지 못했습니다</p>
+          <p className="mt-1 text-sm text-muted-foreground">{error}</p>
+        </div>
+      )}
+
+      {/* 출발 · 도착 — 애플지도 경로 카드처럼 아이콘 원 + 가는 구분선 */}
+      <div className={side ? "absolute top-4 bottom-4 left-4 z-20 flex w-[400px] flex-col gap-3"
+                           : "absolute inset-x-2.5 top-[calc(env(safe-area-inset-top)+0.625rem)] z-20"}>
+        <div className="glass flex items-center gap-1 rounded-[22px] py-1 pr-1.5 pl-3">
+          <div className="min-w-0 flex-1">
+            <Row icon={<span className="grid size-[26px] place-items-center rounded-full bg-primary text-white">
+                         <Navigation className="size-3.5 fill-current" strokeWidth={0} /></span>}>
+              <Select value={fromCode} onValueChange={(v) => v && setFromCode(v)}>
+                <SelectTrigger
+                  aria-label="출발 건물"
+                  className="h-11 w-full border-0 bg-transparent px-0 text-[16px] font-medium shadow-none focus-visible:ring-0 dark:bg-transparent [&>svg]:hidden"
+                >
+                  <SelectValue>
+                    {fromHere && status !== "ok" ? (status === "finding" ? "현재 위치 찾는 중…" : "현재 위치 (사용 불가)")
+                                                 : originName || "건물 선택"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl">
+                  <SelectItem value={HERE}>
+                    <Navigation className="size-3.5 fill-primary text-primary" strokeWidth={0} /> 현재 위치
+                  </SelectItem>
+                  {buildings.map((b) => (
+                    <SelectItem key={b.code} value={b.code}>
+                      {b.name} <span className="text-muted-foreground">{b.code.startsWith("@") ? "" : b.code}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Row>
+            <div className="ml-[38px] h-px bg-border" />
+            <Row icon={<span className="grid size-[26px] place-items-center rounded-full bg-destructive text-white">
+                         <MapPin className="size-3.5" strokeWidth={2.6} /></span>}>
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="강의실 코드나 건물 (U524, 공학관)"
+                aria-label="목적지 강의실"
+                autoComplete="off"
+                className="h-11 border-0 bg-transparent px-0 !text-[16px] font-medium shadow-none placeholder:text-muted-foreground placeholder:font-normal focus-visible:ring-0 dark:bg-transparent"
+              />
+            </Row>
+          </div>
+          <button onClick={swap} aria-label="출발지와 목적지 바꾸기"
+                  className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-foreground/70 active:scale-95">
+            <ArrowUpDown className="size-[17px]" strokeWidth={2.2} />
+          </button>
+        </div>
+
+        {/* 지도 버튼 — 애플지도처럼 오른쪽 위 유리 원 */}
+        <div className={side ? "fixed top-4 right-4" : "mt-2.5 flex justify-end"}>
+          {/* 애플지도처럼 버튼 둘을 한 유리 캡슐에 세로로 묶는다 */}
+          <div className="glass flex flex-col overflow-hidden rounded-full">
+            <button
+              onClick={locate} disabled={locating} aria-label="현재 위치에서 출발"
+              className="grid size-11 place-items-center active:bg-muted"
+            >
+              <Navigation
+                className={`size-[19px] ${fromHere && status === "ok" ? "fill-primary text-primary" : "text-primary"} ${locating ? "animate-pulse" : ""}`}
+                strokeWidth={fromHere && status === "ok" ? 0 : 2.2}
+              />
+            </button>
+            <div className="mx-2.5 h-px bg-border" />
+            <button onClick={toggleTheme} aria-label={theme === "dark" ? "밝은 지도로" : "어두운 지도로"}
+                    className="grid size-11 place-items-center text-foreground/75 active:bg-muted">
+              {theme === "dark" ? <Sun className="size-[19px]" strokeWidth={2.2} /> : <Moon className="size-[18px]" strokeWidth={2.2} />}
+            </button>
+          </div>
+        </div>
+        {side && <Sheet side snap={snap} setSnap={setSnap}>{sheetBody}</Sheet>}
+      </div>
+      {side && (
+        <a className="map-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">
+          경로 데이터 © OpenStreetMap 기여자
+        </a>
+      )}
+
+      {!side && <Sheet snap={snap} setSnap={setSnap}>{sheetBody}</Sheet>}
     </div>
   );
 }
 
 /* ---------------- 바텀시트 ---------------- */
 
-function Sheet({ snap, setSnap, children }: {
-  snap: number; setSnap: (i: number) => void; children: React.ReactNode;
+function Sheet({ snap, setSnap, children, side = false }: {
+  snap: number; setSnap: (i: number) => void; children: React.ReactNode; side?: boolean;
 }) {
   const drag = useRef<{ y: number; h: number; t: number } | null>(null);
   // 끌고 손을 떼면 브라우저가 click 도 보낸다. 그걸 '탭 = 한 단계 올리기' 로 받으면
@@ -429,10 +467,23 @@ function Sheet({ snap, setSnap, children }: {
   // 시트를 끝까지 올리면 지도가 거의 안 보이니 숨긴다 (애플지도 'Legal' 과 같다).
   useLayoutEffect(() => {
     const st = document.documentElement.style;
+    if (side) {   // 왼쪽 패널이면 지도 아래쪽을 덮지 않는다
+      st.setProperty("--sheet-h", "0px"); st.setProperty("--credit-o", "1"); st.setProperty("--sheet-ease", "none");
+      return;
+    }
     st.setProperty("--sheet-h", `${height}px`);
     st.setProperty("--sheet-ease", live === null ? "bottom .34s cubic-bezier(.32,.72,0,1), opacity .2s" : "opacity .2s");
     st.setProperty("--credit-o", height > window.innerHeight * 0.7 ? "0" : "1");
-  }, [height, live]);
+  }, [height, live, side]);
+
+  if (side) {
+    // PC: 왼쪽 패널. 내용만큼 늘어나다가 화면 아래에 닿으면 안에서 스크롤한다. 끌어서 높이 바꾸기는 없다.
+    return (
+      <div className="glass-sheet flex min-h-0 flex-col overflow-hidden rounded-[28px]">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-5">{children}</div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -643,7 +694,7 @@ function useMapOverlays(
   map: any, route: CampusRoute | null, fromCode: string | null, toCode: string | null,
   snap: number, onPick: (code: string) => void,
   here: [number, number] | null, accuracy: number, fromHere: boolean,
-  baseline: CampusRoute | null, theme: Theme,
+  baseline: CampusRoute | null, theme: Theme, side = false,
 ) {
   const drawn = useRef<any[]>([]);
   const raf = useRef<number | undefined>(undefined);
@@ -846,7 +897,8 @@ function useMapOverlays(
       // 화면의 45% 를 넘기지 않는다 — 넘기면 보일 자리가 없어 지도가 통째로 줌아웃된다.
       const h = window.innerHeight;
       const bottom = Math.min(Math.round(h * SNAPS[snap]) + 24, Math.round(h * 0.45));
-      map.setBounds(bounds, 150, 56, bottom, 56);
+      if (side) map.setBounds(bounds, 60, 90, 60, 460);   // 왼쪽 패널(400px)만큼 비운다
+      else map.setBounds(bounds, 150, 56, bottom, 56);
     }
-  }, [map, route, fromCode, toCode, snap, here, accuracy, fromHere, baseline, theme]);
+  }, [map, route, fromCode, toCode, snap, here, accuracy, fromHere, baseline, theme, side]);
 }
