@@ -7,11 +7,14 @@ import {
 import { useKakaoMap } from "./useKakaoMap.ts";
 import {
   buildings, parse, describe, getBuilding, routeBetween, routeFromHere, formatDuration, nearestBuilding, buildingAt,
+  suggestPlaces,
   type CampusRoute, type HereRoute,
 } from "./lib/campus.ts";
 import { buildSteps, ro, type Step, type StepKind } from "./lib/steps.ts";
 import type { RouteOptions } from "./lib/graph.ts";
 import { Roadview } from "./ui/Roadview.tsx";
+import type { Suggestion } from "./lib/fuzzy.ts";
+import { LOOK, useLookOverlays, HeroPanel, IsoLegend } from "./LookPreview.tsx";   // 첫 화면 시안 (?look=a|b|c)
 import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -164,6 +167,13 @@ export default function App() {
   const fromHere = fromCode === HERE;
 
   const parsed = useMemo(() => parse(query), [query]);
+  // 검색창 아래 추천 목록. 오타·초성·한/영 실수·일부만 쳐도 비슷한 곳을 보여준다. (기숙사는 일곱 곳이라 8개까지)
+  const [typing, setTyping] = useState(false);
+  const suggestions = useMemo(() => suggestPlaces(query, 8), [query]);
+  const exact = parsed.ok && !parsed.typed && suggestions[0]?.score === 100 && suggestions[1]?.score !== 100;
+  const showSuggest = typing && suggestions.length > 0 && !exact;
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pick = (s: Suggestion) => { setQuery(s.fill); setTyping(false); inputRef.current?.blur(); };
   const toCode = parsed.ok ? parsed.code : null;
   const dest = toCode ? getBuilding(toCode) : null;
 
@@ -209,7 +219,7 @@ export default function App() {
   // PC 는 화면이 넓어 기본 확대 수준이면 캠퍼스가 작다. 한 단계 확대하고,
   // 왼쪽 패널(400px) 절반만큼 비켜서 캠퍼스가 남은 지도의 가운데에 오게 한다.
   useEffect(() => {
-    if (!map || !side) return;
+    if (!map || !side || LOOK) return;   // 첫 화면 연출(H)이 직접 위치를 잡는다
     map.setLevel(3);
     map.setCenter(new window.kakao.maps.LatLng(CAMPUS_CENTER[0], CAMPUS_CENTER[1]));
     map.panBy(-200, 0);
@@ -256,10 +266,17 @@ export default function App() {
     });
   }, [fromHere, here, fixAccuracy, status, fromCode]);
 
+  // 첫 화면 시안 (?look=a|b|c). 목적지를 고르면 사라진다.
+  useLookOverlays(map, LOOK, { active: !query, here: fromHere && status === "ok" ? here : null, side, dark: theme === "dark", items: quick,
+                                waiting: fromHere && status === "finding" });
+
   const clearDest = () => { setQuery(""); setSnap(0); };
-  const title = dest?.name ?? (query ? describe(parsed) : "어디로 갈까요?");
+  const title = dest?.name ?? (!query ? "어디로 갈까요?"
+    : !parsed.ok && parsed.reason === "unknown" ? (suggestions.length ? `'${query.trim()}' 찾기` : "찾는 곳이 없어요")
+    : describe(parsed));
   const subtitle = dest
-    ? [parsed.ok && parsed.floor !== null ? `${parsed.floor}층` : null, parsed.ok && parsed.room ? parsed.normalized : null]
+    ? [parsed.ok && parsed.typed ? `'${parsed.typed}'(으)로 찾은 곳` : null,
+       parsed.ok && parsed.floor !== null ? `${parsed.floor}층` : null, parsed.ok && parsed.room ? parsed.normalized : null]
         .filter(Boolean).join(" · ")
     : query ? ""
     : fromHere ? (status === "ok" ? "지금 위치에서 걸어서" : status === "finding" ? "현재 위치 찾는 중…" : "강의실 코드나 건물 이름을 입력하세요")
@@ -267,6 +284,7 @@ export default function App() {
 
   const sheetBody = (
       <>
+        {!(LOOK === "c" && !query) && (<>
         {/* 제목 + 닫기 — 애플지도 시트 머리 */}
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
@@ -286,6 +304,7 @@ export default function App() {
           )}
         </div>
 
+        </>)}
         {route ? (
           <>
             <Summary seconds={route.seconds} meters={route.meters} />
@@ -305,15 +324,29 @@ export default function App() {
               {fromHere && accuracy > 30 && <> · 위치 오차 약 {Math.round(accuracy)}m</>}
             </p>
           </>
+        ) : query && !parsed.ok && suggestions.length > 0 ? (
+          // 하나로 못 고른 경우(기숙사·과학관 등) — 후보를 바로 누를 수 있게
+          <div className="mt-3">
+            <p className="text-[15px] text-muted-foreground">이 중에 찾는 곳이 있나요?</p>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {suggestions.slice(0, 8).map((s) => (
+                <button key={s.code} onClick={() => pick(s)}
+                        className="rounded-full bg-card px-3.5 py-2 text-[14px] font-semibold active:scale-95">
+                  {s.name}{s.room && <span className="text-muted-foreground"> {s.room}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : query ? (
           <p className="mt-3 text-[15px] text-muted-foreground">
-            {!parsed.ok ? "강의실 코드를 다시 확인해 주세요"
+            {!parsed.ok ? "건물 이름이나 강의실 코드(U524)로 찾아 주세요"
               : fromHere && status !== "ok" ? HERE_MESSAGE[status]
               : (fromHere ? startBuilding?.code : fromCode) === toCode ? "지금 그 건물에 계세요"
               : "경로를 계산할 수 없습니다"}
           </p>
         ) : (
-          <QuickCards items={quick} onPick={(name) => { setQuery(name); setSnap(0); }} />
+          LOOK === "c" ? <HeroPanel items={quick} sub={subtitle} onPick={(name) => { setQuery(name); setSnap(0); }} />
+          : <QuickCards items={quick} onPick={(name) => { setQuery(name); setSnap(0); }} />
         )}
 
         {dest && <Roadview at={dest.center} label={dest.name} />}
@@ -324,7 +357,7 @@ export default function App() {
 
   return (
     <div className={`relative h-dvh overflow-hidden bg-background ${side ? "side-layout" : ""}`}>
-      <div className="map-tiles absolute inset-0 bg-muted" ref={ref} />
+      <div className={`map-tiles absolute inset-0 bg-muted ${LOOK === "h" ? "opening" : ""}`} ref={ref} />
 
       {error && (
         <div className="glass absolute inset-x-4 top-1/3 z-30 rounded-[22px] p-5">
@@ -336,6 +369,7 @@ export default function App() {
       {/* 출발 · 도착 — 애플지도 경로 카드처럼 아이콘 원 + 가는 구분선 */}
       <div className={side ? "absolute top-4 bottom-4 left-4 z-20 flex w-[400px] flex-col gap-3"
                            : "absolute inset-x-2.5 top-[calc(env(safe-area-inset-top)+0.625rem)] z-20"}>
+        <div className="relative">
         <div className="glass flex items-center gap-1 rounded-[22px] py-1 pr-1.5 pl-3">
           <div className="min-w-0 flex-1">
             <Row icon={<span className="grid size-[26px] place-items-center rounded-full bg-primary text-white">
@@ -366,8 +400,16 @@ export default function App() {
             <Row icon={<span className="grid size-[26px] place-items-center rounded-full bg-destructive text-white">
                          <MapPin className="size-3.5" strokeWidth={2.6} /></span>}>
               <Input
+                ref={inputRef}
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => { setQuery(e.target.value); setTyping(true); }}
+                onFocus={() => setTyping(true)}
+                onBlur={() => setTyping(false)}
+                onKeyDown={(e) => {
+                  // 엔터: 하나로 못 골랐으면 맨 위 추천으로
+                  if (e.key === "Enter") { if (!parsed.ok && suggestions[0]) pick(suggestions[0]); else { setTyping(false); inputRef.current?.blur(); } }
+                  if (e.key === "Escape") { setTyping(false); inputRef.current?.blur(); }
+                }}
                 placeholder="강의실 코드나 건물 (U524, 공학관)"
                 aria-label="목적지 강의실"
                 autoComplete="off"
@@ -379,6 +421,8 @@ export default function App() {
                   className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-foreground/70 active:scale-95">
             <ArrowUpDown className="size-[17px]" strokeWidth={2.2} />
           </button>
+        </div>
+        {showSuggest && <SuggestList items={suggestions} onPick={pick} />}
         </div>
 
         {/* 지도 버튼 — 애플지도처럼 오른쪽 위 유리 원 */}
@@ -403,6 +447,7 @@ export default function App() {
         </div>
         {side && <Sheet side snap={snap} setSnap={setSnap}>{sheetBody}</Sheet>}
       </div>
+      {LOOK === "d" && !query && <IsoLegend side={side} />}
       {side && (
         <a className="map-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">
           경로 데이터 © OpenStreetMap 기여자
@@ -508,6 +553,44 @@ function Sheet({ snap, setSnap, children, side = false }: {
       </div>
     </div>
     </>
+  );
+}
+
+/* ---------------- 검색 추천 ---------------- */
+
+/**
+ * 검색창 바로 아래 추천 목록. 누르기 전에 입력창이 포커스를 잃으면 목록이 사라져 클릭이 안 먹으므로
+ * mousedown 의 기본 동작(포커스 이동)을 막는다.
+ */
+function SuggestList({ items, onPick }: { items: Suggestion[]; onPick: (s: Suggestion) => void }) {
+  return (
+    <ul className="glass absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-[20px] py-1.5" role="listbox" aria-label="검색 추천">
+      {items.map((s, i) => {
+        const b = getBuilding(s.code);
+        return (
+          <li key={s.code + s.room}>
+            <button
+              role="option" aria-selected={i === 0}
+              onMouseDown={(e) => e.preventDefault()} onClick={() => onPick(s)}
+              className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left hover:bg-muted active:bg-muted"
+            >
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-destructive/12 text-destructive">
+                <MapPin className="size-4" strokeWidth={2.4} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[15px] font-semibold">
+                  {s.name}{s.room && <span className="font-medium text-muted-foreground"> {s.room}호</span>}
+                </span>
+                {b && b.aliases?.length > 0 && (
+                  <span className="block truncate text-[12.5px] text-muted-foreground">{b.aliases.slice(0, 3).join(" · ")}</span>
+                )}
+              </span>
+              {!s.code.startsWith("@") && <span className="shrink-0 text-[12.5px] font-semibold text-muted-foreground">{s.code}</span>}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

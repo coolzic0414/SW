@@ -165,6 +165,10 @@ def apply():
                    "accessible": bool(d.get("accessible", False)),
                    "via": "roadview" if "rays" in d else d.get("via", "satellite"),
                    "confirmed": d.get("confirmed", "rays" in d)}
+            # 있는 문이지만 길찾기에는 안 쓰는 문 (이유를 같이 남긴다)
+            for k in ("routing", "routing_why", "confirmed_by"):
+                if k in d:
+                    rec[k] = d[k]
             added.append(rec)
             print(f"  {bl[code]['name']:<10} {d['label']:<6} {at[0]:.6f},{at[1]:.6f}  {how}")
     dj["doors"] = sorted(kept + added, key=lambda d: (d["code"], d["label"]))

@@ -200,7 +200,8 @@
       "label": "정문",
       "accessible": false,
       "via": "satellite",
-      "confirmed": false
+      "confirmed": true,
+      "confirmed_by": "재학생(2026-11-18): 큰길을 따라 쭉 가다가 들어가는 문. 위치는 위성으로 찍은 것."
     },
     {
       "code": "@학생회관",
@@ -211,7 +212,9 @@
       "label": "측문",
       "accessible": false,
       "via": "roadview",
-      "confirmed": true
+      "confirmed": true,
+      "routing": false,
+      "routing_why": "재학생 확인(2026-11-18): 학생회관은 큰길을 따라가다 정문으로 들어간다. 이 문은 I'Design관 뒤 주차장 통로에 붙어 있어서, 길찾기에 쓰면 북쪽에서 오는 경로가 큰길 대신 주차장을 가로질러 I'Design관 뒤로 들어갔다. 문 자체는 있으니 지우지 않고 길찾기에서만 뺀다."
     },
     {
       "code": "@학성사1",

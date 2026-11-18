@@ -55,6 +55,8 @@ export type ParseResult =
       /** 층을 호실 번호에서 추정했으면 false. 추정은 사용자에게 확인받아야 한다. */
       floorConfirmed: boolean;
       normalized: string;
+      /** 오타·초성 등으로 비슷한 곳을 골라 준 경우, 사용자가 실제로 친 말 (campus.parse 가 채운다) */
+      typed?: string;
     }
   | { ok: false; reason: "not_classroom"; place: string }
   | { ok: false; reason: "ambiguous"; room: string; candidates: BuildingEntry[] }

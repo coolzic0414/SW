@@ -373,3 +373,51 @@
 
 /* PC 배치: 왼쪽 패널이 지도 왼쪽 아래를 덮으니 카카오 로고·축척을 패널 오른쪽으로 비킨다 */
 .side-layout .kakao-copy { left: 428px !important; }
+
+/* ---- 첫 화면 시안 (?look) ---- */
+.campus-label {
+  font-size: 11.5px; font-weight: 700; letter-spacing: -0.02em; color: #1c1c1e; white-space: nowrap;
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Pretendard Variable", "Apple SD Gothic Neo", sans-serif;
+}
+.dark .campus-label { color: #f2f2f7; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+.eta-pin {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px 6px 7px; border-radius: 9999px;
+  background: #fff; color: #1c1c1e; font-size: 12.5px; font-weight: 600; white-space: nowrap;
+  box-shadow: 0 4px 14px rgb(0 0 0 / .18), 0 0 0 1px rgb(0 0 0 / .04);
+  font-family: -apple-system, BlinkMacSystemFont, "Pretendard Variable", "Apple SD Gothic Neo", sans-serif;
+  animation: badge-pop .38s cubic-bezier(.34,1.56,.64,1) both;
+}
+.eta-pin i { width: 10px; height: 10px; border-radius: 9999px; background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent); }
+.eta-pin b { color: var(--c); font-weight: 800; margin-left: 2px; }
+.dark .eta-pin { background: #2c2c2e; color: #f2f2f7; }
+@keyframes hero-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.hero-row { animation: hero-in .45s cubic-bezier(.32,.72,0,1) both; }
+
+.iso-label {
+  display: flex; flex-direction: column; align-items: center; line-height: 1.05; white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, "Pretendard Variable", "Apple SD Gothic Neo", sans-serif;
+  animation: badge-pop .36s cubic-bezier(.34,1.56,.64,1) both;
+}
+.iso-label span { font-size: 10.5px; font-weight: 600; color: #3a3a3c; text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+.iso-label b { font-size: 15px; font-weight: 800; color: var(--c); letter-spacing: -0.03em; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff; }
+.iso-label small { font-size: 10px; font-weight: 700; margin-left: 1px; }
+.dark .iso-label span { color: #e5e5ea; text-shadow: 0 0 3px #000; } .dark .iso-label b { text-shadow: 0 0 3px #000, 0 0 3px #000; }
+.campus-label.rise { animation: hero-in .4s cubic-bezier(.32,.72,0,1) both; }
+.walker {
+  width: 9px; height: 9px; border-radius: 9999px; background: var(--c);
+  border: 2px solid #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent), 0 1px 3px rgb(0 0 0 / .3);
+  box-sizing: content-box;
+}
+
+/* 날아 들어오는 동안 내 위치 점이 같이 4배로 커지지 않게 */
+.map-tiles.flying .me-dot { opacity: 0; }
+.map-tiles { will-change: auto; }
+
+/* 첫 화면 연출(H): 날아 들어오기 전까지 지도를 숨겼다가 나타나게 */
+.map-tiles { transition: opacity .35s ease; }
+.map-tiles.opening { opacity: 0; }
+
+/* 날아 들어오기 때 겹쳐 나타나는 가까운 지도 — 본 지도와 같은 색감 */
+.map-ghost img { filter: saturate(0.62) sepia(0.12) brightness(1.03); }
+.dark .map-ghost img { filter: invert(0.92) hue-rotate(180deg) saturate(0.45) brightness(0.95) contrast(0.92); }

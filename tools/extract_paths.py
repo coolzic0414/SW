@@ -5,7 +5,8 @@
 primary/secondary(큰 찻길)는 캠퍼스를 가르는 도로라 제외한다 — 건너갈 수 없는 건 아니지만
 횡단 지점을 모르는 상태로 이어붙이면 없는 길을 만들어낸다.
 """
-import json, math, re, statistics, sys
+import json
+import math, re, statistics, sys
 from collections import defaultdict, deque
 from pathlib import Path
 
@@ -277,6 +278,9 @@ for b in blds:
 
     # (a-0) 찍은 문. 실제 문이니 방향을 선점하고, 그 방향엔 추정 지점을 만들지 않는다.
     for k, sd in enumerate(surveyed.get(b["code"], [])):
+        # 있는 문이지만 길찾기에는 안 쓰기로 한 문 (doors.json 의 routing_why 에 이유)
+        if sd.get("routing") is False:
+            continue
         at = tuple(sd["at"])
         # 문에서 길로 나가는 선은 건물을 가로지르면 안 된다. 가장 가까운 길이라도 건물 반대편이면
         # 문을 나가 벽을 뚫고 뒤로 가는 꼴이 된다(의료과학관 정문이 주차장 길에 붙었었다).
@@ -431,6 +435,46 @@ if manual_paths.exists():
     DOWNHILL_FACTOR = 1.25  # 내리막은 이만큼 빠르다
     UPHILL_FACTOR = 0.70    # 오르막은 이만큼 느리다
 
+    SPLIT_LIMIT = 20.0   # 이보다 먼 도로 선에는 붙이지 않는다
+
+    def split_nearest_edge(pt, nid):
+        """pt 에서 가장 가까운 도로 선(문 접근로·건물 안·관통 제외)을 그 지점에서 둘로 나눈다. 새 점 id 를 돌려준다."""
+        mlon = 111320 * math.cos(math.radians(pt[0]))
+        best = None
+        for ei, e in enumerate(edges):
+            if e.get("kind") in ("approach", "indoor", "through_building"):
+                continue
+            a_, b_ = graph_nodes[e["from"]], graph_nodes[e["to"]]
+            geom = e.get("geom") or [[a_["lat"], a_["lon"]], [b_["lat"], b_["lon"]]]
+            # geom 이 from→to 방향인지 맞춘다
+            if meters(tuple(geom[0]), (a_["lat"], a_["lon"])) > meters(tuple(geom[-1]), (a_["lat"], a_["lon"])):
+                geom = list(reversed(geom))
+            for k in range(len(geom) - 1):
+                ax, ay = (geom[k][1] - pt[1]) * mlon, (geom[k][0] - pt[0]) * 111320
+                bx, by = (geom[k + 1][1] - pt[1]) * mlon, (geom[k + 1][0] - pt[0]) * 111320
+                dx, dy = bx - ax, by - ay
+                t = max(0.0, min(1.0, -(ax * dx + ay * dy) / ((dx * dx + dy * dy) or 1)))
+                d = math.hypot(ax + dx * t, ay + dy * t)
+                if best is None or d < best[0]:
+                    best = (d, ei, k, t, geom)
+        if best is None or best[0] > SPLIT_LIMIT:
+            raise SystemExit(f"  ! {nid}: {SPLIT_LIMIT}m 안에 나눌 도로 선이 없습니다")
+        d, ei, k, t, geom = best
+        e = edges[ei]
+        p = (geom[k][0] + (geom[k + 1][0] - geom[k][0]) * t, geom[k][1] + (geom[k + 1][1] - geom[k][1]) * t)
+        p = (round(p[0], 7), round(p[1], 7))
+        g1 = [list(x) for x in geom[: k + 1]] + [list(p)]
+        g2 = [list(p)] + [list(x) for x in geom[k + 1 :]]
+        L = lambda g: sum(meters(tuple(g[j]), tuple(g[j + 1])) for j in range(len(g) - 1))
+        l1, l2 = L(g1), L(g2)
+        tot = max(l1 + l2, 0.1)
+        graph_nodes[nid] = {"lat": p[0], "lon": p[1]}
+        e1 = {**e, "to": nid, "meters": round(e["meters"] * l1 / tot, 1), "seconds": round(e["seconds"] * l1 / tot, 1), "geom": g1}
+        e2 = {**e, "from": nid, "meters": round(e["meters"] * l2 / tot, 1), "seconds": round(e["seconds"] * l2 / tot, 1), "geom": g2}
+        edges[ei:ei + 1] = [e1, e2]
+        print(f"  {nid}: 도로 선을 {d:.1f}m 거리에서 나눠 붙임 ({e['from']}–{e['to']})")
+        return nid
+
     def nearest_node(pt, limit=MANUAL_SNAP):
         """
         수동 보행로의 끝을 붙일 점을 고른다.
@@ -460,6 +504,23 @@ if manual_paths.exists():
         # 길이 막다른 토막이 된다. (실제로 그렇게 들어간 적이 있다)
         def snap_end(i):
             q = pts[i]
+            # 끝을 어디에 붙일지 직접 정할 수 있다 (start_at / end_at).
+            #   "free"      : 아무 데도 붙이지 않고 제 점으로 둔다. 운동장 안쪽 끝처럼 근처 도로(위쪽)에
+            #                 붙으면 계단 아래가 도로로 순간이동하는 곳에 쓴다.
+            #   "mp:이름:번호" : 먼저 적은 다른 손 길의 그 점에 붙인다. 계단과 가로지르기를 정확히 잇는다.
+            at = mp.get("start_at" if i == 0 else "end_at")
+            if at == "free":
+                nid = f"mp:{mp['name']}:{i}"
+                graph_nodes[nid] = {"lat": round(q[0], 7), "lon": round(q[1], 7)}
+                return nid
+            if at == "split":
+                # 가장 가까운 '도로 선' 을 그 자리에서 둘로 나누고 거기에 붙인다.
+                # 교차점에만 붙이면, 긴 도로 한가운데로 내려오는 계단이 수십 m 떨어진 교차점까지 이어져 버린다.
+                return split_nearest_edge(q, f"j:{mp['name']}:{i}")
+            if at:
+                if at not in graph_nodes:
+                    raise SystemExit(f"'{mp['name']}' 의 {'start_at' if i == 0 else 'end_at'}={at} 점이 없습니다 — 그 길을 이 길보다 먼저 적어야 합니다")
+                return at
             nid = nearest_node(q)
             if nid is not None:
                 return nid

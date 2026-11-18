@@ -8,6 +8,8 @@
  *
  *   node tools/survey_capture.mjs 9 U ML      # 건물 코드들
  *   node tools/survey_capture.mjs --all
+ *   TARGETS=tmp/fields.json MAX_RV=10 node tools/survey_capture.mjs F1   # 건물 대신 다른 영역(운동장 등)
+ *     TARGETS 파일은 data/buildings.json 과 같은 모양 ({buildings:[{code,name,center,polygon}]})
  *
  * 주의: 카카오 로드뷰의 init 이벤트는 처음 한 번만 온다. 파노라마를 바꿀 때는
  *       panoid_changed 를 같이 들어야 한다. 안 그러면 두 번째부터 영원히 기다린다.
@@ -19,12 +21,12 @@ const OUT = `${process.env.OUT_DIR ?? "tmp"}/survey`;
 mkdirSync(OUT, { recursive: true });
 
 const KEY = readFileSync(".env", "utf8").match(/VITE_KAKAO_JS_KEY=(\S+)/)[1];
-const BLDS = JSON.parse(readFileSync("data/buildings.json", "utf8")).buildings;
+const BLDS = JSON.parse(readFileSync(process.env.TARGETS ?? "data/buildings.json", "utf8")).buildings;
 
 const W = 700, H = 700;      // 스카이뷰 (CSS px). 화면 배율 2배로 찍어 1400px 이 된다
 const RW = 520, RH = 300;    // 로드뷰 한 장
 const PAD = 18;              // 건물 둘레 여유 (m)
-const MAX_RV = 4;            // 건물당 로드뷰 장수
+const MAX_RV = Number(process.env.MAX_RV ?? 4);   // 건물당 로드뷰 장수
 const APART = 25;            // 촬영 지점끼리 최소 간격 (m)
 
 const args = process.argv.slice(2);

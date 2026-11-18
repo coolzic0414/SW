@@ -21,7 +21,18 @@ const uses = (r: R, part: string) => r.edges.some((e: any) => (e.name ?? "").inc
 const behindIncubator = (r: R) => r.edges.some((e: any) =>
   (e.geom ?? []).some((p: number[]) => p[0] < 36.7698 && p[1] > 126.93295 && p[1] < 126.9338));
 
+// I'Design관 뒤 주차장 통로(OSM way 471804242 의 가운데 점)를 지나는가
+const behindIDesign = (r: R) => r.nodes.includes("8953774249");
+const enterDoor = (r: R) => r.edges.filter((e: any) => e.kind === "approach").pop()?.name;
+
 const rules: [string, string, string, (r: R) => boolean, RouteOptions?][] = [
+  ["의료과학관 → 학생회관은 큰길을 따라가다 정문으로 들어간다 (I'Design관 뒤 주차장으로 안 간다)", "1", "@학생회관",
+   (r) => !behindIDesign(r) && enterDoor(r) === "정문"],
+  ["교직원식당 → 학생회관도 큰길을 따라 정문으로", "@교직원식당", "@학생회관", (r) => !behindIDesign(r) && enterDoor(r) === "정문"],
+  ["미랩 → 학생회관도 큰길을 따라 정문으로", "ML", "@학생회관", (r) => !behindIDesign(r) && enterDoor(r) === "정문"],
+  ["인문과학관 → 학군단은 대운동장을 가로지른다 (남쪽 계단 → 체육관 옆 통로)", "6", "R",
+   (r) => uses(r, "대운동장 가로지르기") && uses(r, "대운동장 남쪽 계단") && uses(r, "체육관 옆 통로")],
+  ["학군단 → 대학본부도 대운동장을 가로지른다", "R", "@대학본부", (r) => uses(r, "대운동장 가로지르기")],
   ["향2 → 미랩은 유니토피아를 관통한다", "@향설생활관2", "ML", (r) => uses(r, "유니토피아관 관통")],
   ["향2 → 미랩은 공학관 앞 산길 계단으로 내려간다", "@향설생활관2", "ML", (r) => uses(r, "산길 계단")],
   ["향2 → 공학관은 향설생활관1을 관통한다", "@향설생활관2", "9", (r) => uses(r, "향설생활관1 관통")],

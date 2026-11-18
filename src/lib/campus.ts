@@ -3,6 +3,7 @@ import roomCodes from "../../data/room-codes.json";
 import buildingsJson from "../../data/buildings.json";
 import graphJson from "../../data/outdoor-graph.json";
 import { buildRoomCodeIndex, parseRoomCode, describe, type ParseResult } from "./roomCode.ts";
+import { suggest, bestGuess, type Place, type Suggestion } from "./fuzzy.ts";
 import { findRoute, isBuildingHub, type Graph, type GraphEdge, type RouteOptions, type Route } from "./graph.ts";
 
 export interface Building {
@@ -25,7 +26,36 @@ const idx = buildRoomCodeIndex(roomCodes as any, landmarks);
 const snapByCode = new Map(graph.building_snap.map((s) => [s.code, s]));
 const buildingByCode = new Map(buildings.map((b) => [b.code, b]));
 
-export const parse = (s: string): ParseResult => parseRoomCode(s, idx);
+/**
+ * 비슷한 말 찾기에 쓰는 장소 목록: 이름 + 별칭 + 코드.
+ * 여러 곳을 가리키는 말(기숙사)은 별칭으로 넣으면 파서가 한 곳만 골라 버리므로, 여기에만 낱말로 붙인다.
+ * 그러면 '기숙사' 를 치면 일곱 곳이 같은 점수로 나와 고르게 된다.
+ */
+const SHARED_WORDS: Record<string, string[]> = {
+  기숙사: ["RC", "@향설생활관2", "@향설생활관3", "@학성사1", "@학성사2", "@학성사3", "@글로벌빌리지"],
+};
+const places: Place[] = buildings.map((b) => ({
+  code: b.code,
+  name: b.name,
+  keys: [b.name, ...(b.aliases ?? []), ...(b.code.startsWith("@") ? [] : [b.code]),
+         ...Object.entries(SHARED_WORDS).filter(([, cs]) => cs.includes(b.code)).map(([w]) => w)],
+}));
+
+/** 입력과 비슷한 곳들 (검색창 아래 추천 목록) */
+export const suggestPlaces = (s: string, limit = 6): Suggestion[] => suggest(s, places, limit);
+
+/**
+ * 검색어 해석. 강의실 코드·이름·별칭으로 먼저 정확히 찾고, 못 찾으면 비슷한 말로 찾는다.
+ * 비슷한 곳이 딱 하나로 분명할 때만 고른다("공헉관" → 공학관). 여러 곳이 비슷하면(기숙사, 과학관) 고르지 않는다.
+ */
+export const parse = (s: string): ParseResult => {
+  const r = parseRoomCode(s, idx);
+  if (r.ok || r.reason !== "unknown") return r;
+  const g = bestGuess(suggest(s, places, 3));
+  if (!g) return r;
+  const r2 = parseRoomCode(g.fill, idx);
+  return r2.ok ? { ...r2, typed: s.trim() } : r;
+};
 export { describe };
 export const getBuilding = (code: string) => buildingByCode.get(code);
 
