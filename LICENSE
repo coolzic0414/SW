@@ -20,8 +20,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
----
-
-이 저장소의 data/ 중 OpenStreetMap 에서 파생된 데이터는 위 MIT 라이선스가 아니라
-Open Database License (ODbL) 1.0 을 따릅니다. © OpenStreetMap contributors
-https://www.openstreetmap.org/copyright

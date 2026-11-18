@@ -75,7 +75,7 @@ tools/                 데이터 만들기·검사 스크립트
 ## 데이터 출처와 라이선스
 
 - **코드**: MIT — [LICENSE](LICENSE)
-- **지도 데이터**: 건물 외곽선과 보행로는 [OpenStreetMap](https://www.openstreetmap.org/copyright) 에서 가져왔습니다. © OpenStreetMap contributors. OSM 에서 파생된 `data/` 의 파일(`osm-campus.xml`, `buildings.json`, `outdoor-graph.json` 등)은 [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) 을 따릅니다.
+- **지도 데이터**: 건물 외곽선과 보행로는 [OpenStreetMap](https://www.openstreetmap.org/copyright) 에서 가져왔습니다. © OpenStreetMap contributors. OSM 에서 파생된 `data/` 의 파일(`osm-campus.xml`, `buildings.json`, `outdoor-graph.json` 등)은 [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) 을 따릅니다. 자세한 내용은 [data/LICENSE.md](data/LICENSE.md).
 - **지도 화면·로드뷰**: [카카오맵 API](https://apis.map.kakao.com/) 를 쓰며 카카오 이용약관을 따릅니다.
 - **글꼴**: [Pretendard](https://github.com/orioncactus/pretendard) (SIL Open Font License 1.1)
 - **UI**: React, Vite, Tailwind CSS, shadcn/ui, lucide 아이콘 — 각 라이선스를 따릅니다.
