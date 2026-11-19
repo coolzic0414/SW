@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 const SDK_ID = "kakao-maps-sdk";
 
 /** 카카오맵 SDK를 한 번만 불러온다. autoload=false 로 받고 명시적으로 load 한다. */
-function loadSdk(key: string): Promise<void> {
+export function loadSdk(key: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (window.kakao?.maps?.Map) return resolve();
 

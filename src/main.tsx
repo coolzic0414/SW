@@ -7,6 +7,7 @@ import "./index.css";
 //   /       → 카카오맵 길찾기 (기본)
 //   /?gl    → MapLibre + OpenFreeMap (지도 스타일 직접 정의, 건물 3D)   — 개발 중에만
 //   /?edit  → 출입구 찍는 도구                                         — 개발 중에만
+//   /?apex  → 시험작: 같은 앱에 3D 지도(MapLibre) 부품만 끼운 것           — 개발 중에만
 //
 // 편집 도구·실험용 지도는 배포본에 넣지 않는다. 누구나 ?edit 로 열 수 있게 되고,
 // MapLibre 때문에 배포 파일이 2MB 넘게 커진다. import.meta.env.DEV 가 false 면
@@ -15,6 +16,7 @@ const q = new URLSearchParams(location.search);
 const DevTool = import.meta.env.DEV
   ? q.has("edit") ? lazy(() => import("./DoorEditor.tsx"))
   : q.has("gl") ? lazy(() => import("./AppGL.tsx"))
+  : q.has("apex") ? lazy(() => import("./apex/AppApex.tsx"))   // 시험작: 같은 앱 + 3D 지도 부품
   : null
   : null;
 

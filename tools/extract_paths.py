@@ -499,7 +499,8 @@ if manual_paths.exists():
 
     for mp in json.loads(manual_paths.read_text(encoding="utf-8"))["paths"]:
         pts = [tuple(q) for q in mp["points"]]
-        speed = WALKABLE.get(mp.get("kind", "footway"), 1.30)
+        # 길마다 속도를 따로 줄 수 있다 (운동장 가로지르기처럼 포장 안 된 바닥은 보행로보다 느리다)
+        speed = mp.get("speed") or WALKABLE.get(mp.get("kind", "footway"), 1.30)
         # 양 끝을 먼저 정한다. 중간 점을 먼저 만들면 끝점이 '방금 만든 자기 점' 에 붙어
         # 길이 막다른 토막이 된다. (실제로 그렇게 들어간 적이 있다)
         def snap_end(i):

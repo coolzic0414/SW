@@ -421,3 +421,25 @@
 /* 날아 들어오기 때 겹쳐 나타나는 가까운 지도 — 본 지도와 같은 색감 */
 .map-ghost img { filter: saturate(0.62) sepia(0.12) brightness(1.03); }
 .dark .map-ghost img { filter: invert(0.92) hue-rotate(180deg) saturate(0.45) brightness(0.95) contrast(0.92); }
+
+/* ---- 시험작 /?apex ---- */
+/* MapLibre 가 지도 상자에 position:relative 를 덮어써 absolute 가 풀리면 높이가 0 이 된다 */
+.map-tiles.maplibregl-map { position: absolute; }
+.apex-vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 75% 70% at 60% 50%, transparent 55%, rgb(3 5 9 / .55) 100%);
+}
+:root:not(.dark) .apex-vignette { background: radial-gradient(ellipse 75% 70% at 60% 50%, transparent 60%, rgb(120 132 150 / .18) 100%); }
+.apex-panel > div {
+  background: rgb(14 17 23 / .72); border: 1px solid rgb(255 255 255 / .07);
+  -webkit-backdrop-filter: blur(22px) saturate(140%); backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: 0 20px 60px rgb(0 0 0 / .55);
+}
+.apex-pin {
+  display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px 6px 9px; border-radius: 9999px;
+  background: rgb(14 17 23 / .82); color: #e8ecf3; font: 600 12.5px -apple-system, BlinkMacSystemFont, "Pretendard Variable", "Apple SD Gothic Neo", sans-serif;
+  border: 1px solid rgb(255 255 255 / .1); box-shadow: 0 6px 22px rgb(0 0 0 / .5), 0 0 18px rgb(255 138 26 / .25);
+  white-space: nowrap; animation: badge-pop .38s cubic-bezier(.34,1.56,.64,1) both;
+}
+.apex-pin i { width: 9px; height: 9px; border-radius: 9999px; }
+.apex-pin b { color: #ffb15c; font-weight: 800; margin-left: 2px; }

@@ -22,7 +22,7 @@ import {
 
 const CAMPUS_CENTER: [number, number] = [36.77004, 126.93192];
 
-const token = (n: string) =>
+export const token = (n: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(n).trim() || "#2563eb";
 
 type Theme = "dark" | "light";
@@ -33,10 +33,9 @@ type Theme = "dark" | "light";
  * 버튼으로 바꾼 값만 기억한다 — 기본값을 저장해 두면 나중에 기본을 바꿔도 예전 값이 남는다.
  * (키 이름을 바꾼 이유도 그것: 예전 버전이 'theme' 에 기본값 dark 를 자동 저장해 두었다.)
  */
-const THEME_KEY = "theme-choice";
-function useTheme(): [Theme, () => void] {
+function useTheme(THEME_KEY = "theme-choice", fallback: Theme = "light"): [Theme, () => void] {
   const [theme, setTheme] = useState<Theme>(() => {
-    try { return localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light"; } catch { return "light"; }
+    try { const v = localStorage.getItem(THEME_KEY); return v === "dark" || v === "light" ? v : fallback; } catch { return fallback; }
   });
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -70,7 +69,7 @@ function useSideLayout() {
 const SHORTCUT_MIN_SAVED = 20;
 
 /** 관통 엣지 노드 id 는 `ds:<건물코드>:<번호>-<문>` — 어느 건물을 지나는지 여기서 꺼낸다. */
-const crossedBuildings = (r: CampusRoute) => [
+export const crossedBuildings = (r: CampusRoute) => [
   ...new Set(r.edges.filter((e) => e.kind === "through_building").map((e) => e.from.split(":")[1])),
 ];
 
@@ -116,7 +115,7 @@ function useHere() {
   return { here, accuracy, fixAccuracy, status };
 }
 
-const dist = (a: [number, number], b: [number, number]) =>
+export const dist = (a: [number, number], b: [number, number]) =>
   Math.hypot((a[0] - b[0]) * 111_320, (a[1] - b[1]) * 111_320 * Math.cos((a[0] * Math.PI) / 180));
 
 const HERE_MESSAGE: Record<Exclude<HereStatus, "ok">, string> = {
@@ -143,20 +142,81 @@ const QUICK = [
 const NO_OPTS: RouteOptions = {};
 
 /** 시트 높이 단계. 지도를 가리는 정도를 사용자가 고르게 한다. 가장 낮은 단계에서도 첫 화면 카드 한 줄은 보여야 한다. */
-const SNAPS = [0.255, 0.52, 0.86] as const;
+export const SNAPS = [0.255, 0.52, 0.86] as const;
 
 /**
  * 지도 핀에 넣을 짧은 글자.
  * 강의동은 코드가 한두 글자라 그대로 쓰지만(U, 9, ML),
  * 강의실 없는 건물은 코드가 '@교직원식당' 이라 이름을 줄여 쓴다.
  */
-const pinLabel = (b: { code: string; name: string }) =>
+export const pinLabel = (b: { code: string; name: string }) =>
   b.code.startsWith("@") ? b.name : b.code;
 
-export default function App() {
-  const [theme, toggleTheme] = useTheme();
+/**
+ * 지도 부품. 앱 본체(검색·경로 계산·시트·안내)는 하나이고, 지도에 그리는 부분만 갈아 끼운다.
+ * 기본은 카카오 지도. /?apex 는 같은 앱에 3D 지도(MapLibre) 부품을 끼운 것이라 기능이 똑같다.
+ */
+export interface OpeningOpts {
+  active: boolean; here: [number, number] | null; side: boolean; dark: boolean;
+  items: { code: string; name: string; color: string; seconds: number | null; meters: number | null;
+           Icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }[];
+  waiting?: boolean;
+}
+export interface MapKit {
+  useMap: (side: boolean, theme: Theme) => { ref: React.RefObject<HTMLDivElement | null>; map: any; error: string | null };
+  useOverlays: typeof useMapOverlays;
+  useOpening: (map: any, o: OpeningOpts) => void;
+  panTo: (map: any, at: [number, number]) => void;
+  /** 지도 출처 표기 */
+  credit: string;
+  /** 테마 저장 키와 기본값 — 3D 지도는 어두운 쪽이 기본이라 본 사이트 선택과 섞이지 않게 따로 둔다 */
+  themeKey: string; themeDefault: Theme;
+  /** 첫 화면 연출 전까지 지도를 숨기는가 (카카오 H 연출) */
+  hideUntilOpening: boolean;
+}
+
+function useKakaoKitMap(side: boolean) {
+  const st = useKakaoMap(CAMPUS_CENTER, 4);
+  const { map } = st;
+  // 카카오 로고·축척 묶음에 이름표를 붙여 CSS 로 시트 위로 올린다 (index.css .kakao-copy).
+  // SDK 가 지도를 그린 뒤에야 생기므로 잠깐 기다리며 찾는다.
+  useEffect(() => {
+    if (!map) return;
+    let tries = 0;
+    const id = setInterval(() => {
+      const logo = document.querySelector<HTMLImageElement>('.map-tiles img[src*="m_bi"]');
+      let el: HTMLElement | null = logo;
+      while (el && el.style.position !== "absolute") el = el.parentElement;
+      if (el) { el.classList.add("kakao-copy"); clearInterval(id); }
+      else if (++tries > 40) clearInterval(id);
+    }, 150);
+    return () => clearInterval(id);
+  }, [map]);
+  // PC 는 화면이 넓어 기본 확대 수준이면 캠퍼스가 작다. 한 단계 확대하고,
+  // 왼쪽 패널(400px) 절반만큼 비켜서 캠퍼스가 남은 지도의 가운데에 오게 한다.
+  useEffect(() => {
+    if (!map || !side || LOOK) return;   // 첫 화면 연출(H)이 직접 위치를 잡는다
+    map.setLevel(3);
+    map.setCenter(new window.kakao.maps.LatLng(CAMPUS_CENTER[0], CAMPUS_CENTER[1]));
+    map.panBy(-200, 0);
+  }, [map, side]);
+  return st;
+}
+
+export const KAKAO_KIT: MapKit = {
+  useMap: (side) => useKakaoKitMap(side),
+  useOverlays: useMapOverlays,
+  useOpening: (map, o) => useLookOverlays(map, LOOK, o),
+  panTo: (map, at) => map.panTo(new window.kakao.maps.LatLng(at[0], at[1])),
+  credit: "경로 데이터 © OpenStreetMap 기여자",
+  themeKey: "theme-choice", themeDefault: "light",
+  hideUntilOpening: LOOK === "h",
+};
+
+export default function App({ kit = KAKAO_KIT }: { kit?: MapKit }) {
+  const [theme, toggleTheme] = useTheme(kit.themeKey, kit.themeDefault);
   const side = useSideLayout();
-  const { ref, map, error } = useKakaoMap(CAMPUS_CENTER, 4);
+  const { ref, map, error } = kit.useMap(side, theme);
   const [query, setQuery] = useState("");   // 애플지도처럼 빈 상태에서 시작
   const [fromCode, setFromCode] = useState(HERE);   // 기본은 현재 위치에서 출발
   // 경로 옵션(비 안 맞는 길·계단 없는 길)은 화면에서 뺐다. 근거 데이터가 부족해서 약속을 지킬 수 없었다
@@ -201,35 +261,11 @@ export default function App() {
     [route, dest, fromHere, startBuilding, originName],
   );
 
-  // 카카오 로고·축척 묶음에 이름표를 붙여 CSS 로 시트 위로 올린다 (index.css .kakao-copy).
-  // SDK 가 지도를 그린 뒤에야 생기므로 잠깐 기다리며 찾는다.
-  useEffect(() => {
-    if (!map) return;
-    let tries = 0;
-    const id = setInterval(() => {
-      const logo = document.querySelector<HTMLImageElement>('.map-tiles img[src*="m_bi"]');
-      let el: HTMLElement | null = logo;
-      while (el && el.style.position !== "absolute") el = el.parentElement;
-      if (el) { el.classList.add("kakao-copy"); clearInterval(id); }
-      else if (++tries > 40) clearInterval(id);
-    }, 150);
-    return () => clearInterval(id);
-  }, [map]);
-
-  // PC 는 화면이 넓어 기본 확대 수준이면 캠퍼스가 작다. 한 단계 확대하고,
-  // 왼쪽 패널(400px) 절반만큼 비켜서 캠퍼스가 남은 지도의 가운데에 오게 한다.
-  useEffect(() => {
-    if (!map || !side || LOOK) return;   // 첫 화면 연출(H)이 직접 위치를 잡는다
-    map.setLevel(3);
-    map.setCenter(new window.kakao.maps.LatLng(CAMPUS_CENTER[0], CAMPUS_CENTER[1]));
-    map.panBy(-200, 0);
-  }, [map, side]);
-
   const pickDestination = useCallback((code: string) => {
     setQuery(getBuilding(code)?.name ?? code);
     setSnap((s) => Math.max(s, 1)); // 지도를 찍었으면 결과를 보여줘야 한다
   }, []);
-  useMapOverlays(map, route, fromHere ? startBuilding?.code ?? null : fromCode, toCode, snap, pickDestination,
+  kit.useOverlays(map, route, fromHere ? startBuilding?.code ?? null : fromCode, toCode, snap, pickDestination,
                  here, accuracy, fromHere, baseline, theme, side);
 
   const swap = () => {
@@ -249,7 +285,7 @@ export default function App() {
   // 현재 위치 버튼 — 출발지를 현재 위치로 되돌리고 지도를 내 자리로 옮긴다
   const locate = () => {
     setFromCode(HERE);
-    if (map && here) map.panTo(new window.kakao.maps.LatLng(here[0], here[1]));
+    if (map && here) kit.panTo(map, here);
   };
   const locating = fromHere && status === "finding";
 
@@ -267,7 +303,7 @@ export default function App() {
   }, [fromHere, here, fixAccuracy, status, fromCode]);
 
   // 첫 화면 시안 (?look=a|b|c). 목적지를 고르면 사라진다.
-  useLookOverlays(map, LOOK, { active: !query, here: fromHere && status === "ok" ? here : null, side, dark: theme === "dark", items: quick,
+  kit.useOpening(map, { active: !query, here: fromHere && status === "ok" ? here : null, side, dark: theme === "dark", items: quick,
                                 waiting: fromHere && status === "finding" });
 
   const clearDest = () => { setQuery(""); setSnap(0); };
@@ -357,7 +393,7 @@ export default function App() {
 
   return (
     <div className={`relative h-dvh overflow-hidden bg-background ${side ? "side-layout" : ""}`}>
-      <div className={`map-tiles absolute inset-0 bg-muted ${LOOK === "h" ? "opening" : ""}`} ref={ref} />
+      <div className={`map-tiles absolute inset-0 bg-muted ${kit.hideUntilOpening ? "opening" : ""}`} ref={ref} />
 
       {error && (
         <div className="glass absolute inset-x-4 top-1/3 z-30 rounded-[22px] p-5">
@@ -450,19 +486,19 @@ export default function App() {
       {LOOK === "d" && !query && <IsoLegend side={side} />}
       {side && (
         <a className="map-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">
-          경로 데이터 © OpenStreetMap 기여자
+          {kit.credit}
         </a>
       )}
 
-      {!side && <Sheet snap={snap} setSnap={setSnap}>{sheetBody}</Sheet>}
+      {!side && <Sheet snap={snap} setSnap={setSnap} credit={kit.credit}>{sheetBody}</Sheet>}
     </div>
   );
 }
 
 /* ---------------- 바텀시트 ---------------- */
 
-function Sheet({ snap, setSnap, children, side = false }: {
-  snap: number; setSnap: (i: number) => void; children: React.ReactNode; side?: boolean;
+function Sheet({ snap, setSnap, children, side = false, credit = "" }: {
+  snap: number; setSnap: (i: number) => void; children: React.ReactNode; side?: boolean; credit?: string;
 }) {
   const drag = useRef<{ y: number; h: number; t: number } | null>(null);
   // 끌고 손을 떼면 브라우저가 click 도 보낸다. 그걸 '탭 = 한 단계 올리기' 로 받으면
@@ -533,7 +569,7 @@ function Sheet({ snap, setSnap, children, side = false }: {
   return (
     <>
     <a className="map-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">
-      경로 데이터 © OpenStreetMap 기여자
+      {credit}
     </a>
     {/* 애플지도 iOS 26 시트 — 화면 가장자리에서 떨어져 떠 있고 네 모서리가 다 둥글다 */}
     <div
@@ -773,7 +809,7 @@ function Composition({ route }: { route: CampusRoute }) {
  * 건물 18개를 전부 라벨링하면 카카오 지도 자체 글자와 겹쳐 지저분해진다.
  * 출발지·목적지만 표시하고 나머지는 카카오 라벨에 맡긴다.
  */
-function useMapOverlays(
+export function useMapOverlays(
   map: any, route: CampusRoute | null, fromCode: string | null, toCode: string | null,
   snap: number, onPick: (code: string) => void,
   here: [number, number] | null, accuracy: number, fromHere: boolean,
