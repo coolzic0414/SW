@@ -394,6 +394,8 @@ function useApexOverlays(
       const b = all.reduce((bb, c) => bb.extend(c), new maplibregl.LngLatBounds(all[0], all[0]));
       const h = window.innerHeight;
       const bottom = Math.min(Math.round(h * SNAPS[snap]) + 24, Math.round(h * 0.45));
+      // 첫 화면 연출이 남긴 여백이 지도에 붙어 있으면 여기 여백과 합쳐져 화면을 넘는다 (폰에서 멀리 빠짐)
+      map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 });
       map.fitBounds(b, { padding: side ? { left: 470, top: 90, right: 70, bottom: 70 } : { top: 160, bottom, left: 50, right: 50 },
                          pitch: PITCH, bearing: BEARING, maxZoom: 17.8, duration: 900 });
     }
