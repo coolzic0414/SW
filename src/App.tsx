@@ -7,7 +7,7 @@ import {
 import { useKakaoMap } from "./useKakaoMap.ts";
 import {
   buildings, parse, describe, getBuilding, routeBetween, routeFromHere, formatDuration, nearestBuilding, buildingAt,
-  suggestPlaces,
+  suggestPlaces, canStartHere,
   type CampusRoute, type HereRoute,
 } from "./lib/campus.ts";
 import { buildSteps, ro, type Step, type StepKind } from "./lib/steps.ts";
@@ -97,7 +97,8 @@ function useHere() {
     const id = navigator.geolocation.watchPosition(
       (p) => {
         const at: [number, number] = [p.coords.latitude, p.coords.longitude];
-        const far = dist(at, CAMPUS_CENTER) > CAMPUS_RADIUS;
+        // 캠퍼스 길에 붙을 수 없으면 캠퍼스 밖 (학교 옆 동네도 여기 걸린다)
+        const far = dist(at, CAMPUS_CENTER) > CAMPUS_RADIUS || !canStartHere(at, p.coords.accuracy);
         setStatus(far ? "far" : "ok");
         setAccuracy(p.coords.accuracy);
         if (!last.current || dist(last.current, at) > 8) {

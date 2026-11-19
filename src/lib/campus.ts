@@ -207,24 +207,8 @@ export interface HereRoute extends CampusRoute {
   startBuilding: Building | null;
 }
 
-/**
- * 현재 위치에서 목적지 건물까지.
- *
- * 건물 안이면 그 건물에서 출발한다(문으로 나가야 하니까).
- * 바깥이면 가장 가까운 바깥 길에 수선을 내려, 그 자리에서 길을 둘로 쪼개고 출발 노드를 끼워 넣는다.
- * 그래프 원본은 건드리지 않고 이번 탐색용 사본에만 넣는다.
- */
-export function routeFromHere(at: [number, number], toCode: string, opts: RouteOptions = {}, accuracy = 0): HereRoute | null {
-  const inside = buildingAt(at, accuracy);
-  if (inside) {
-    if (inside.code === toCode) return null;
-    const r = routeBetween(inside.code, toCode, opts);
-    return r ? { ...r, startBuilding: inside } : null;
-  }
-  const goal = snapByCode.get(toCode);
-  if (!goal) return null;
-
-  // 가장 가까운 바깥 길 조각 찾기. 한쪽으로만 가는 길(에스컬레이터·관통·경사로)은 반으로 못 쪼개서 뺀다.
+/** 현재 위치에서 가장 가까운 바깥 길 조각. 한쪽으로만 가는 길(에스컬레이터·관통·경사로)은 반으로 못 쪼개서 뺀다. */
+function nearestWalk(at: [number, number]) {
   const K = 111_320 * Math.cos((at[0] * Math.PI) / 180);
   let best: { d: number; ei: number; k: number; t: number; p: [number, number] } | null = null;
   graph.edges.forEach((e, ei) => {
@@ -242,6 +226,38 @@ export function routeFromHere(at: [number, number], toCode: string, opts: RouteO
       }
     }
   });
+  return best as { d: number; ei: number; k: number; t: number; p: [number, number] } | null;
+}
+
+/**
+ * 여기서 길안내를 시작할 수 있는가 — 건물 안이거나 캠퍼스 길에서 HERE_SNAP_LIMIT 안.
+ * 캠퍼스 중심과의 거리로만 보면, 학교 바로 옆 동네(1km 안)는 '캠퍼스 안' 으로 잡히는데
+ * 길에 붙지 못해 '경로를 계산할 수 없습니다' 가 떴다.
+ */
+export function canStartHere(at: [number, number], accuracy = 0): boolean {
+  if (buildingAt(at, accuracy)) return true;
+  const best = nearestWalk(at);
+  return !!best && best.d <= HERE_SNAP_LIMIT;
+}
+
+/**
+ * 현재 위치에서 목적지 건물까지.
+ *
+ * 건물 안이면 그 건물에서 출발한다(문으로 나가야 하니까).
+ * 바깥이면 가장 가까운 바깥 길에 수선을 내려, 그 자리에서 길을 둘로 쪼개고 출발 노드를 끼워 넣는다.
+ * 그래프 원본은 건드리지 않고 이번 탐색용 사본에만 넣는다.
+ */
+export function routeFromHere(at: [number, number], toCode: string, opts: RouteOptions = {}, accuracy = 0): HereRoute | null {
+  const inside = buildingAt(at, accuracy);
+  if (inside) {
+    if (inside.code === toCode) return null;
+    const r = routeBetween(inside.code, toCode, opts);
+    return r ? { ...r, startBuilding: inside } : null;
+  }
+  const goal = snapByCode.get(toCode);
+  if (!goal) return null;
+
+  const best = nearestWalk(at);
   if (!best) return null;
   const { d, ei, k, p } = best as NonNullable<typeof best>;
   if (d > HERE_SNAP_LIMIT) return null;
