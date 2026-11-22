@@ -192,6 +192,17 @@
       "confirmed": true
     },
     {
+      "code": "@앙뜨레프레너관",
+      "at": [
+        36.7687987,
+        126.9340282
+      ],
+      "label": "남서문",
+      "accessible": false,
+      "via": "knowledge",
+      "confirmed": false
+    },
+    {
       "code": "@학생회관",
       "at": [
         36.7699681,

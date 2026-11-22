@@ -745,6 +745,9 @@ if shortcuts_file.exists():
             }
             if "accessible" in sc:
                 rec["accessible"] = sc["accessible"]
+            if floors:
+                # 안내 문구용: 아래쪽 문이 1층 지상, 위쪽 문이 (1+floors)층 지상
+                rec["floors"] = floors if way == "내려감" else -floors
             edges.append(rec)
         shortcut_count += 1
 

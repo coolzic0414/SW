@@ -63,7 +63,12 @@ export function buildSteps(route: CampusRoute, fromName: string, toName: string)
 
     if (seg.kind === "through_building") {
       kind = "through";
-      text = "건물 1층을 통과";
+      // 경사지 건물은 위쪽 문이 3층 지상, 아래쪽 문이 1층 지상이다 — 들어가는 층과 나오는 층을 알려 준다
+      const floors = (e as { floors?: number }).floors ?? 0;
+      const bname = (e.name ?? "").split(" 관통")[0];
+      text = !floors || !bname ? "건물 1층을 통과"
+        : floors > 0 ? `${bname} ${1 + floors}층으로 들어가 1층으로 나오기`
+        : `${bname} 1층으로 들어가 ${1 - floors}층으로 나오기`;
     } else if (seg.kind === "approach") {
       kind = "approach";
       text = i === 0 ? "건물 밖으로 나와 길까지" : "건물 앞까지";

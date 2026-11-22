@@ -70,6 +70,17 @@ test("건물 관통과 접근로는 따로 표시된다", () => {
   assert.ok(s.some((x) => x.kind === "through" && /통과/.test(x.text)));
 });
 
+test("경사지 건물 관통은 들어가는 층과 나오는 층을 알려 준다", () => {
+  const through = (name: string, floors: number) => {
+    const r = route([{ kind: "through_building", pts: [[36.7705, 126.930], [36.771, 126.930]] }]);
+    Object.assign(r.edges[0], { name, floors });
+    return buildSteps(r, "A", "B").find((x) => x.kind === "through")!.text;
+  };
+  assert.equal(through("앙뜨레프레너관 관통 (내려감)", 2), "앙뜨레프레너관 3층으로 들어가 1층으로 나오기");
+  assert.equal(through("앙뜨레프레너관 관통 (올라감)", -2), "앙뜨레프레너관 1층으로 들어가 3층으로 나오기");
+  assert.equal(through("향설생활관2 관통", 0), "건물 1층을 통과");
+});
+
 test("짧은 꺾임은 앞 단계로 흡수된다", () => {
   const north: [number, number][] = [[36.770, 126.930], [36.772, 126.930]];
   const tinyEast: [number, number][] = [[36.772, 126.930], [36.772, 126.9301]]; // 약 9m
