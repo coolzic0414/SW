@@ -183,17 +183,6 @@
     {
       "code": "@앙뜨레프레너관",
       "at": [
-        36.7689938,
-        126.9341695
-      ],
-      "label": "정문",
-      "accessible": false,
-      "via": "roadview",
-      "confirmed": true
-    },
-    {
-      "code": "@앙뜨레프레너관",
-      "at": [
         36.7687987,
         126.9340282
       ],
@@ -201,6 +190,17 @@
       "accessible": false,
       "via": "knowledge",
       "confirmed": false
+    },
+    {
+      "code": "@앙뜨레프레너관",
+      "at": [
+        36.7689938,
+        126.9341695
+      ],
+      "label": "정문",
+      "accessible": false,
+      "via": "roadview",
+      "confirmed": true
     },
     {
       "code": "@학생회관",
