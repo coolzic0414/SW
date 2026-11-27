@@ -443,3 +443,34 @@
 }
 .apex-pin i { width: 9px; height: 9px; border-radius: 9999px; }
 .apex-pin b { color: #ffb15c; font-weight: 800; margin-left: 2px; }
+
+/* ---------- 누르는 곳 ----------
+ * press   : 버튼·카드. 누르면 1px 가라앉고 0.985 배로 줄었다가, 떼면 돌아온다.
+ *           마우스로 올리면 버튼은 1px, 카드(press-card)는 2px 뜬다. 튕김 없이 한 곡선.
+ * press-bg: 유리 캡슐 안 버튼·목록 줄. 모양은 그대로 두고 바탕만 짙어진다.
+ * hit     : 겉모습은 작아도 손가락이 닿는 범위를 사방 --hit 만큼 넓힌다 (44px 맞추기). */
+.press, .press-card {
+  transition: transform 120ms cubic-bezier(.2,.8,.2,1), background-color 150ms cubic-bezier(.2,.8,.2,1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .press:hover { transform: translateY(-1px); transition-duration: 150ms; }
+  .press-card:hover { transform: translateY(-2px); transition-duration: 180ms; }
+}
+.press:active, .press-card:active {
+  transform: translateY(1px) scale(.985);
+  transition-duration: 90ms;
+}
+.press-bg { transition: background-color 150ms cubic-bezier(.2,.8,.2,1); }
+.press-bg:active { transition-duration: 90ms; }
+.hit { position: relative; }
+.hit::after { content: ""; position: absolute; inset: calc(var(--hit, 5px) * -1); }
+@media (prefers-reduced-motion: reduce) {
+  .press, .press-card, .press-bg { transition: none; }
+  .press:hover, .press-card:hover, .press:active, .press-card:active { transform: none; }
+}
+
+/* 시트 손잡이는 막대 아래 제목 줄까지 잡히게 44px. 내용을 내려 읽는 중에는 원래 높이로 돌아가 목록을 가리지 않는다.
+ * 오른쪽 끝(목적지 지우기 버튼 자리)은 비워 둔다. */
+.sheet-grip { position: relative; z-index: 10; }
+.sheet-grip::after { content: ""; position: absolute; left: 0; right: 56px; top: 0; height: 46px; }
+.sheet-grip.scrolled::after { height: 100%; }

@@ -335,7 +335,7 @@ export default function App({ kit = KAKAO_KIT }: { kit?: MapKit }) {
           </div>
           {query && (
             <button onClick={clearDest} aria-label="목적지 지우기"
-                    className="grid size-[30px] shrink-0 place-items-center rounded-full bg-muted text-muted-foreground active:scale-95">
+                    className="press hit grid size-[30px] shrink-0 place-items-center rounded-full bg-muted text-muted-foreground [--hit:8px]">
               <X className="size-4" strokeWidth={2.6} />
             </button>
           )}
@@ -368,7 +368,7 @@ export default function App({ kit = KAKAO_KIT }: { kit?: MapKit }) {
             <div className="mt-2.5 flex flex-wrap gap-2">
               {suggestions.slice(0, 8).map((s) => (
                 <button key={s.code} onClick={() => pick(s)}
-                        className="rounded-full bg-card px-3.5 py-2 text-[14px] font-semibold active:scale-95">
+                        className="press hit rounded-full bg-card px-3.5 py-2 text-[14px] font-semibold">
                   {s.name}{s.room && <span className="text-muted-foreground"> {s.room}</span>}
                 </button>
               ))}
@@ -414,7 +414,7 @@ export default function App({ kit = KAKAO_KIT }: { kit?: MapKit }) {
               <Select value={fromCode} onValueChange={(v) => v && setFromCode(v)}>
                 <SelectTrigger
                   aria-label="출발 건물"
-                  className="h-11 w-full border-0 bg-transparent px-0 text-[16px] font-medium shadow-none focus-visible:ring-0 dark:bg-transparent [&>svg]:hidden"
+                  className="h-11 data-[size=default]:h-11 w-full border-0 bg-transparent px-0 text-[16px] font-medium shadow-none focus-visible:ring-0 dark:bg-transparent [&>svg]:hidden"
                 >
                   <SelectValue>
                     {fromHere && status !== "ok" ? (status === "finding" ? "현재 위치 찾는 중…" : "현재 위치 (사용 불가)")
@@ -455,7 +455,7 @@ export default function App({ kit = KAKAO_KIT }: { kit?: MapKit }) {
             </Row>
           </div>
           <button onClick={swap} aria-label="출발지와 목적지 바꾸기"
-                  className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-foreground/70 active:scale-95">
+                  className="press hit grid size-9 shrink-0 place-items-center rounded-full bg-muted text-foreground/70">
             <ArrowUpDown className="size-[17px]" strokeWidth={2.2} />
           </button>
         </div>
@@ -468,7 +468,7 @@ export default function App({ kit = KAKAO_KIT }: { kit?: MapKit }) {
           <div className="glass flex flex-col overflow-hidden rounded-full">
             <button
               onClick={locate} disabled={locating} aria-label="현재 위치에서 출발"
-              className="grid size-11 place-items-center active:bg-muted"
+              className="press-bg grid size-11 place-items-center active:bg-muted"
             >
               <Navigation
                 className={`size-[19px] ${fromHere && status === "ok" ? "fill-primary text-primary" : "text-primary"} ${locating ? "animate-pulse" : ""}`}
@@ -477,7 +477,7 @@ export default function App({ kit = KAKAO_KIT }: { kit?: MapKit }) {
             </button>
             <div className="mx-2.5 h-px bg-border" />
             <button onClick={toggleTheme} aria-label={theme === "dark" ? "밝은 지도로" : "어두운 지도로"}
-                    className="grid size-11 place-items-center text-foreground/75 active:bg-muted">
+                    className="press-bg grid size-11 place-items-center text-foreground/75 active:bg-muted">
               {theme === "dark" ? <Sun className="size-[19px]" strokeWidth={2.2} /> : <Moon className="size-[18px]" strokeWidth={2.2} />}
             </button>
           </div>
@@ -506,6 +506,7 @@ function Sheet({ snap, setSnap, children, side = false, credit = "" }: {
   // 내려놓자마자 다시 올라간다. 끌었으면 그 click 은 버린다.
   const dragged = useRef(false);
   const [live, setLive] = useState<number | null>(null);
+  const [scrolled, setScrolled] = useState(false);
   const height = live ?? SNAPS[snap] * window.innerHeight;
 
   const onDown = (e: React.PointerEvent) => {
@@ -578,14 +579,15 @@ function Sheet({ snap, setSnap, children, side = false, credit = "" }: {
       style={{ height, transition: live === null ? "height .34s cubic-bezier(.32,.72,0,1)" : "none" }}
     >
       <div
-        className="shrink-0 cursor-grab touch-none px-5 pt-2 pb-1.5 active:cursor-grabbing"
+        className={`sheet-grip shrink-0 cursor-grab touch-none px-5 pt-2 pb-1.5 active:cursor-grabbing ${scrolled ? "scrolled" : ""}`}
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
         onClick={onTap}
         role="button" tabIndex={0} aria-label="시트 높이 조절"
       >
         <div className="mx-auto h-[5px] w-9 rounded-full bg-foreground/20" />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-1.5 pb-5">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-2 pb-5"
+           onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 0)}>
         {children}
       </div>
     </div>
@@ -609,7 +611,7 @@ function SuggestList({ items, onPick }: { items: Suggestion[]; onPick: (s: Sugge
             <button
               role="option" aria-selected={i === 0}
               onMouseDown={(e) => e.preventDefault()} onClick={() => onPick(s)}
-              className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left hover:bg-muted active:bg-muted"
+              className="press-bg flex w-full items-center gap-3 px-3.5 py-2.5 text-left hover:bg-muted active:bg-muted"
             >
               <span className="grid size-8 shrink-0 place-items-center rounded-full bg-destructive/12 text-destructive">
                 <MapPin className="size-4" strokeWidth={2.4} />
@@ -645,7 +647,7 @@ function QuickCards({ items, onPick }: { items: QuickItem[]; onPick: (name: stri
       {items.map((q) => (
         <button
           key={q.code} onClick={() => onPick(q.name)}
-          className="flex w-[118px] shrink-0 flex-col items-start rounded-2xl bg-card p-3 text-left active:scale-[0.97]"
+          className="press-card flex w-[118px] shrink-0 flex-col items-start rounded-2xl bg-card p-3 text-left"
         >
           <span className="grid size-9 place-items-center rounded-full text-white" style={{ background: q.color }}>
             <q.Icon className="size-[18px]" strokeWidth={2.3} />
