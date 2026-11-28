@@ -13,6 +13,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import { buildings, graph, nearestBuilding, routeFromHere, formatDuration, type CampusRoute } from "../lib/campus.ts";
 import { loadSdk } from "../useKakaoMap.ts";
+import roofJson from "../../data/building-colors.json";
 import { token, crossedBuildings, dist, SNAPS, pinLabel, type MapKit, type OpeningOpts, type Theme } from "../App.tsx";
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -55,6 +56,9 @@ const PAL = {
 } as const;
 
 const isDarkLook = (t: Theme) => t !== "light";
+
+/** 건물별 실제 지붕 색 (위성사진에서 뽑음, tools/building_colors.mjs). 실사에서 입체 건물을 이 색으로 칠한다. */
+const ROOF = roofJson.colors as Record<string, string>;
 
 /** 캠퍼스를 감싸는 볼록 껍질 (그 안의 OSM 건물은 우리 건물로 대신 세운다) */
 function hull(): [number, number][] {
@@ -124,7 +128,7 @@ function setup(m: maplibregl.Map) {
              "fill-extrusion-vertical-gradient": true } });
 
   const fc = { type: "FeatureCollection" as const, features: buildings.filter((b) => b.polygon.length >= 3).map((b) => ({
-    type: "Feature" as const, properties: { code: b.code, h: HEIGHT[b.code] ?? 10 },
+    type: "Feature" as const, properties: { code: b.code, h: HEIGHT[b.code] ?? 10, roof: ROOF[b.code] ?? "#cfcac0" },
     geometry: { type: "Polygon" as const, coordinates: [[...b.polygon.map(ll), ll(b.polygon[0])]] } })) };
   m.addSource("campus", { type: "geojson", data: fc });
 
@@ -320,16 +324,17 @@ function useApexOverlays(
     const crossed = route ? crossedBuildings(route) : [];
 
     // 건물: 도착 빨강 · 출발 파랑 · 지름길로 통과 주황 (카카오 판의 면 칠하기와 같은 뜻)
+    const roofed = theme === "satellite";
     map.setPaintProperty("campus-3d", "fill-extrusion-color", ["case",
       ["==", ["get", "code"], toCode ?? "__"], P.to,
       ["==", ["get", "code"], fromCode ?? "__"], P.from,
       ["in", ["get", "code"], ["literal", crossed]], P.crossed,
-      P.campus] as never);
+      roofed ? ["get", "roof"] : P.campus] as never);
     map.setPaintProperty("campus-cap", "fill-extrusion-color", ["case",
       ["==", ["get", "code"], toCode ?? "__"], P.toCap,
       ["==", ["get", "code"], fromCode ?? "__"], P.fromCap,
       ["in", ["get", "code"], ["literal", crossed]], P.crossedCap,
-      P.cap] as never);
+      roofed ? ["get", "roof"] : P.cap] as never);
     map.setPaintProperty("campus-foot", "line-color", ["case",
       ["==", ["get", "code"], toCode ?? "__"], P.footTo,
       ["==", ["get", "code"], fromCode ?? "__"], P.footFrom,
