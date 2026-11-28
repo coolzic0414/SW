@@ -32,7 +32,17 @@ export interface RouteOptions {
   stepFree?: boolean;
   /** 건물 관통 지름길을 쓰지 않는다 (카카오맵과 비교할 때의 대조군) */
   noShortcut?: boolean;
+  /**
+   * 편한 길: 계단은 실제보다 몇 배 오래 걸리는 것처럼 쳐서 웬만하면 피하고, 에스컬레이터는 반긴다.
+   * 막지는 않는다 — 계단밖에 없는 곳(산길 등)에서도 길은 나와야 한다.
+   */
+  comfort?: boolean;
 }
+
+/** 편한 길에서 계단 1초를 몇 초로 칠지. 3이면 계단 20초가 1분짜리로 보여 돌아가는 평지 길을 고른다. */
+const COMFORT_STEPS = 3;
+/** 편한 길에서 에스컬레이터를 얼마나 반길지 (1보다 작을수록 먼저 고른다) */
+const COMFORT_ESCALATOR = 0.6;
 
 export interface Route {
   nodes: string[];
@@ -73,7 +83,12 @@ function usable(e: GraphEdge, o: RouteOptions): boolean {
 }
 
 function cost(e: GraphEdge, o: RouteOptions): number {
-  return o.preferIndoor && !e.indoor ? e.seconds * OUTDOOR_RAIN_PENALTY : e.seconds;
+  let c = o.preferIndoor && !e.indoor ? e.seconds * OUTDOOR_RAIN_PENALTY : e.seconds;
+  if (o.comfort) {
+    if (e.kind === "steps" || e.accessible === false) c *= COMFORT_STEPS;
+    else if (e.kind === "escalator") c *= COMFORT_ESCALATOR;
+  }
+  return c;
 }
 
 /** 건물을 대표하는 노드. extract_paths.py 가 `b:<건물코드>` 로 만든다. */

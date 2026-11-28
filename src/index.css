@@ -196,6 +196,8 @@
   /* 밝은 타일을 어둡게 뒤집는다. hue-rotate 로 색상환을 되돌려 하늘·녹지 색을 유지. */
   filter: invert(0.92) hue-rotate(180deg) saturate(0.45) brightness(0.95) contrast(0.92);
 }
+/* 실사(위성사진)는 사진 그대로 */
+.sat .map-tiles img, .sat .map-ghost img { filter: none; }
 
 /* 경로 위를 달리는 빛줄기 — "안내 중"이라는 신호 */
 @keyframes none-placeholder { to { opacity: 1; } }
@@ -474,3 +476,8 @@
 .sheet-grip { position: relative; z-index: 10; }
 .sheet-grip::after { content: ""; position: absolute; left: 0; right: 56px; top: 0; height: 46px; }
 .sheet-grip.scrolled::after { height: 100%; }
+
+/* 지도 모양 메뉴 — 버튼 옆에 살짝 떨어지며 나타난다 */
+.theme-menu { animation: theme-menu-in 160ms cubic-bezier(.2,.8,.2,1); transform-origin: top right; }
+@keyframes theme-menu-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { .theme-menu { animation: none; } }

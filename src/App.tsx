@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import {
   ArrowUpDown, Navigation, MapPin, X,
   CornerUpLeft, CornerUpRight, ArrowUp, DoorOpen, Building2,
-  BookOpen, Users, Utensils, Dumbbell, Landmark, Sun, Moon, Zap,
+  BookOpen, Users, Utensils, Dumbbell, Landmark, Sun, Moon, Zap, Layers, Satellite, Check,
 } from "lucide-react";
 import { useKakaoMap } from "./useKakaoMap.ts";
 import {
@@ -25,7 +25,13 @@ const CAMPUS_CENTER: [number, number] = [36.77004, 126.93192];
 export const token = (n: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(n).trim() || "#2563eb";
 
-type Theme = "dark" | "light";
+/** 지도 모양. 실사(satellite)는 위성사진이라 화면 부품은 어두운 쪽을 쓴다. */
+export type Theme = "dark" | "light" | "satellite";
+const THEMES: { id: Theme; label: string; Icon: typeof Sun }[] = [
+  { id: "dark", label: "어두운", Icon: Moon },
+  { id: "light", label: "밝은", Icon: Sun },
+  { id: "satellite", label: "실사", Icon: Satellite },
+];
 
 /**
  * 기본은 밝은 지도. 실제로 쓰는 곳이 낮의 야외(햇빛 아래)이고, 발표 프로젝터는 어두운 화면을 뭉갠다.
@@ -33,19 +39,20 @@ type Theme = "dark" | "light";
  * 버튼으로 바꾼 값만 기억한다 — 기본값을 저장해 두면 나중에 기본을 바꿔도 예전 값이 남는다.
  * (키 이름을 바꾼 이유도 그것: 예전 버전이 'theme' 에 기본값 dark 를 자동 저장해 두었다.)
  */
-function useTheme(THEME_KEY = "theme-choice", fallback: Theme = "light"): [Theme, () => void] {
+function useTheme(THEME_KEY = "theme-choice", fallback: Theme = "light"): [Theme, (t: Theme) => void] {
   const [theme, setTheme] = useState<Theme>(() => {
-    try { const v = localStorage.getItem(THEME_KEY); return v === "dark" || v === "light" ? v : fallback; } catch { return fallback; }
+    try { const v = localStorage.getItem(THEME_KEY); return THEMES.some((t) => t.id === v) ? v as Theme : fallback; } catch { return fallback; }
   });
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
+    const c = document.documentElement.classList;
+    c.toggle("dark", theme !== "light");
+    c.toggle("sat", theme === "satellite");
   }, [theme]);
-  const toggle = () => setTheme((t) => {
-    const next = t === "dark" ? "light" : "dark";
+  const choose = (next: Theme) => {
+    setTheme(next);
     try { localStorage.setItem(THEME_KEY, next); } catch { /* 사생활 보호 모드 등 — 기억 못 해도 동작은 한다 */ }
-    return next;
-  });
-  return [theme, toggle];
+  };
+  return [theme, choose];
 }
 
 /**
@@ -141,6 +148,7 @@ const QUICK = [
 ] as const;
 
 const NO_OPTS: RouteOptions = {};
+const COMFORT_OPTS: RouteOptions = { comfort: true };
 
 /** 시트 높이 단계. 지도를 가리는 정도를 사용자가 고르게 한다. 가장 낮은 단계에서도 첫 화면 카드 한 줄은 보여야 한다. */
 export const SNAPS = [0.255, 0.52, 0.86] as const;
@@ -168,17 +176,23 @@ export interface MapKit {
   useOverlays: typeof useMapOverlays;
   useOpening: (map: any, o: OpeningOpts) => void;
   panTo: (map: any, at: [number, number]) => void;
-  /** 지도 출처 표기 */
-  credit: string;
+  /** 지도 출처 표기 (지도 모양에 따라 다를 수 있다 — 실사는 위성사진 출처가 붙는다) */
+  credit: (theme: Theme) => string;
   /** 테마 저장 키와 기본값 — 3D 지도는 어두운 쪽이 기본이라 본 사이트 선택과 섞이지 않게 따로 둔다 */
   themeKey: string; themeDefault: Theme;
   /** 첫 화면 연출 전까지 지도를 숨기는가 (카카오 H 연출) */
   hideUntilOpening: boolean;
 }
 
-function useKakaoKitMap(side: boolean) {
+function useKakaoKitMap(side: boolean, theme: Theme) {
   const st = useKakaoMap(CAMPUS_CENTER, 4);
   const { map } = st;
+  // 실사는 카카오 스카이뷰
+  useEffect(() => {
+    if (!map) return;
+    const T = window.kakao.maps.MapTypeId;
+    map.setMapTypeId(theme === "satellite" ? T.HYBRID : T.ROADMAP);
+  }, [map, theme]);
   // 카카오 로고·축척 묶음에 이름표를 붙여 CSS 로 시트 위로 올린다 (index.css .kakao-copy).
   // SDK 가 지도를 그린 뒤에야 생기므로 잠깐 기다리며 찾는다.
   useEffect(() => {
@@ -205,24 +219,30 @@ function useKakaoKitMap(side: boolean) {
 }
 
 export const KAKAO_KIT: MapKit = {
-  useMap: (side) => useKakaoKitMap(side),
+  useMap: (side, theme) => useKakaoKitMap(side, theme),
   useOverlays: useMapOverlays,
   useOpening: (map, o) => useLookOverlays(map, LOOK, o),
   panTo: (map, at) => map.panTo(new window.kakao.maps.LatLng(at[0], at[1])),
-  credit: "경로 데이터 © OpenStreetMap 기여자",
+  credit: () => "경로 데이터 © OpenStreetMap 기여자",
   themeKey: "theme-choice", themeDefault: "light",
   hideUntilOpening: LOOK === "h",
 };
 
 export default function App({ kit = KAKAO_KIT }: { kit?: MapKit }) {
-  const [theme, toggleTheme] = useTheme(kit.themeKey, kit.themeDefault);
+  const [theme, chooseTheme] = useTheme(kit.themeKey, kit.themeDefault);
+  const [themeMenu, setThemeMenu] = useState(false);
   const side = useSideLayout();
   const { ref, map, error } = kit.useMap(side, theme);
   const [query, setQuery] = useState("");   // 애플지도처럼 빈 상태에서 시작
   const [fromCode, setFromCode] = useState(HERE);   // 기본은 현재 위치에서 출발
-  // 경로 옵션(비 안 맞는 길·계단 없는 길)은 화면에서 뺐다. 근거 데이터가 부족해서 약속을 지킬 수 없었다
-  // (실내 연결 데이터는 건물 관통 3곳뿐, 출입구 46개 중 계단 없음 확인은 1개). 엔진에는 남아 있다.
-  const opts: RouteOptions = NO_OPTS;
+  // 계단 피하기(편한 길): 계단을 몇 배로 쳐서 웬만하면 돌아가고 에스컬레이터를 반긴다. 막지는 않는다.
+  // (예전 '계단 없는 길' 은 계단을 아예 막아서, 확인된 데이터가 적은 이 캠퍼스에선 길이 안 나왔다)
+  const [avoidStairs, setAvoidStairs] = useState(() => { try { return localStorage.getItem("avoid-stairs") === "1"; } catch { return false; } });
+  const toggleStairs = () => setAvoidStairs((v) => {
+    try { localStorage.setItem("avoid-stairs", v ? "0" : "1"); } catch { /* 기억 못 해도 동작은 한다 */ }
+    return !v;
+  });
+  const opts: RouteOptions = avoidStairs ? COMFORT_OPTS : NO_OPTS;
   const [snap, setSnap] = useState(0);
   const { here, accuracy, fixAccuracy, status } = useHere();
   const fromHere = fromCode === HERE;
@@ -243,6 +263,15 @@ export default function App({ kit = KAKAO_KIT }: { kit?: MapKit }) {
     if (fromHere) return here && status === "ok" ? routeFromHere(here, toCode, opts, fixAccuracy) : null;
     return toCode !== fromCode ? routeBetween(fromCode, toCode, opts) : null;
   }, [fromHere, here, fixAccuracy, status, fromCode, toCode, opts]);
+
+  // 계단 피하기를 켰을 때와 껐을 때 길이 갈리는가. 같으면 스위치를 보여줄 이유가 없다.
+  const altRoute: CampusRoute | null = useMemo(() => {
+    if (!route || !toCode) return null;
+    const o = avoidStairs ? NO_OPTS : COMFORT_OPTS;
+    return fromHere ? (here ? routeFromHere(here, toCode, o, fixAccuracy) : null) : routeBetween(fromCode, toCode, o);
+  }, [route, toCode, avoidStairs, fromHere, here, fixAccuracy, fromCode]);
+  const routesDiffer = !!route && !!altRoute
+    && route.edges.map((e) => e.from + ">" + e.to).join() !== altRoute.edges.map((e) => e.from + ">" + e.to).join();
 
   // 지름길을 탔으면 '안 탔을 때' 경로도 구한다. 둘을 나란히 보여주는 게 이 앱의 존재 이유다.
   const baseline: CampusRoute | null = useMemo(() => {
@@ -304,7 +333,7 @@ export default function App({ kit = KAKAO_KIT }: { kit?: MapKit }) {
   }, [fromHere, here, fixAccuracy, status, fromCode]);
 
   // 첫 화면 시안 (?look=a|b|c). 목적지를 고르면 사라진다.
-  kit.useOpening(map, { active: !query, here: fromHere && status === "ok" ? here : null, side, dark: theme === "dark", items: quick,
+  kit.useOpening(map, { active: !query, here: fromHere && status === "ok" ? here : null, side, dark: theme !== "light", items: quick,
                                 waiting: fromHere && status === "finding" });
 
   const clearDest = () => { setQuery(""); setSnap(0); };
@@ -345,6 +374,10 @@ export default function App({ kit = KAKAO_KIT }: { kit?: MapKit }) {
         {route ? (
           <>
             <Summary seconds={route.seconds} meters={route.meters} />
+            {(routesDiffer || avoidStairs) && (
+              <StairsSwitch on={avoidStairs} onToggle={toggleStairs}
+                            extra={!avoidStairs && altRoute ? altRoute.seconds - route.seconds : 0} />
+            )}
             {baseline && (
               <ShortcutCard fast={route.seconds} slow={baseline.seconds}
                             via={crossedBuildings(route).map((c) => getBuilding(c)?.name ?? c)} />
@@ -463,7 +496,7 @@ export default function App({ kit = KAKAO_KIT }: { kit?: MapKit }) {
         </div>
 
         {/* 지도 버튼 — 애플지도처럼 오른쪽 위 유리 원 */}
-        <div className={side ? "fixed top-4 right-4" : "mt-2.5 flex justify-end"}>
+        <div className={side ? "fixed top-4 right-4" : "relative mt-2.5 flex justify-end"}>
           {/* 애플지도처럼 버튼 둘을 한 유리 캡슐에 세로로 묶는다 */}
           <div className="glass flex flex-col overflow-hidden rounded-full">
             <button
@@ -476,22 +509,24 @@ export default function App({ kit = KAKAO_KIT }: { kit?: MapKit }) {
               />
             </button>
             <div className="mx-2.5 h-px bg-border" />
-            <button onClick={toggleTheme} aria-label={theme === "dark" ? "밝은 지도로" : "어두운 지도로"}
+            <button onClick={() => setThemeMenu((v) => !v)} aria-label="지도 모양" aria-haspopup="menu" aria-expanded={themeMenu}
                     className="press-bg grid size-11 place-items-center text-foreground/75 active:bg-muted">
-              {theme === "dark" ? <Sun className="size-[19px]" strokeWidth={2.2} /> : <Moon className="size-[18px]" strokeWidth={2.2} />}
+              <Layers className="size-[19px]" strokeWidth={2.2} />
             </button>
           </div>
+          {themeMenu && <ThemeMenu theme={theme} onClose={() => setThemeMenu(false)}
+                                   onPick={(t) => { chooseTheme(t); setThemeMenu(false); }} />}
         </div>
         {side && <Sheet side snap={snap} setSnap={setSnap}>{sheetBody}</Sheet>}
       </div>
       {LOOK === "d" && !query && <IsoLegend side={side} />}
       {side && (
         <a className="map-credit" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">
-          {kit.credit}
+          {kit.credit(theme)}
         </a>
       )}
 
-      {!side && <Sheet snap={snap} setSnap={setSnap} credit={kit.credit}>{sheetBody}</Sheet>}
+      {!side && <Sheet snap={snap} setSnap={setSnap} credit={kit.credit(theme)}>{sheetBody}</Sheet>}
     </div>
   );
 }
@@ -716,6 +751,52 @@ function Row({ icon, children }: { icon: React.ReactNode; children: React.ReactN
   );
 }
 
+/** 지도 모양 고르기. 지도 버튼 캡슐 옆에 펼쳐지고, 바깥을 누르거나 Esc 로 닫는다. */
+function ThemeMenu({ theme, onPick, onClose }: {
+  theme: Theme; onPick: (t: Theme) => void; onClose: () => void;
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const down = (e: PointerEvent) => {
+      // 메뉴를 연 버튼을 다시 누른 것도 바깥이지만, 그 버튼이 직접 닫으니 여기선 건드리지 않는다
+      if (box.current && !box.current.contains(e.target as Node) && !(e.target as Element).closest?.('[aria-label="지도 모양"]')) onClose();
+    };
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("pointerdown", down);
+    document.addEventListener("keydown", key);
+    box.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus();
+    return () => { document.removeEventListener("pointerdown", down); document.removeEventListener("keydown", key); };
+  }, [onClose]);
+  return (
+    <div ref={box} role="menu" aria-label="지도 모양"
+         className={`theme-menu glass absolute z-30 w-[172px] overflow-hidden rounded-[18px] py-1.5 top-[45px] right-[54px]`}>
+      {THEMES.map(({ id, label, Icon }) => (
+        <button key={id} role="menuitemradio" aria-checked={theme === id} onClick={() => onPick(id)}
+                className="press-bg flex h-11 w-full items-center gap-3 px-3.5 text-left text-[15px] font-medium hover:bg-muted active:bg-muted">
+          <Icon className="size-[18px] text-foreground/70" strokeWidth={2.2} />
+          <span className="flex-1">{label}</span>
+          {theme === id && <Check className="size-[18px] text-primary" strokeWidth={2.6} />}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** 계단 피하기 스위치 — 요약 바로 아래 한 줄. 꺼져 있을 때는 켜면 얼마나 더 걸리는지 오른쪽에 적는다. */
+function StairsSwitch({ on, onToggle, extra }: { on: boolean; onToggle: () => void; extra: number }) {
+  const min = Math.round(extra / 60);
+  return (
+    <button role="switch" aria-checked={on} onClick={onToggle}
+            className="press-bg mt-2 flex min-h-11 w-full items-center gap-3 rounded-2xl bg-card px-3.5 py-2 text-left active:bg-muted">
+      <span className="flex-1 text-[15px] font-semibold">계단 피하기</span>
+      {!on && min > 0 && <span className="num text-[13px] text-muted-foreground">+{min}분</span>}
+      <span className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 ${on ? "bg-[#34c759]" : "bg-foreground/15"}`}>
+        <span className={`absolute top-[2px] left-[2px] size-[27px] rounded-full bg-white shadow-[0_2px_6px_rgb(0_0_0/0.25)] transition-transform duration-200 ${on ? "translate-x-[20px]" : ""}`} />
+      </span>
+    </button>
+  );
+}
+
 /** 애플지도 하단 막대 '9:54 도착 · 13분 · 10mi' — 큰 숫자 셋, 아래 작은 회색 라벨 */
 function Summary({ seconds, meters }: { seconds: number; meters: number }) {
   const arrive = new Date(Date.now() + seconds * 1000);
@@ -857,7 +938,7 @@ export function useMapOverlays(
     }
 
     const shortcut = token("--map-shortcut");
-    const dark = theme === "dark";
+    const dark = theme !== "light";
     const crossed = route ? crossedBuildings(route) : [];
 
     // 지름길로 통과하는 건물은 주황으로 칠한다 — '여기를 뚫고 간다' 가 한눈에 보이게

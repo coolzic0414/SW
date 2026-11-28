@@ -13,11 +13,10 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import { buildings, graph, nearestBuilding, routeFromHere, formatDuration, type CampusRoute } from "../lib/campus.ts";
 import { loadSdk } from "../useKakaoMap.ts";
-import { token, crossedBuildings, dist, SNAPS, pinLabel, type MapKit, type OpeningOpts } from "../App.tsx";
+import { token, crossedBuildings, dist, SNAPS, pinLabel, type MapKit, type OpeningOpts, type Theme } from "../App.tsx";
 
 maplibregl.setWorkerUrl(workerUrl);
 
-type Theme = "light" | "dark";
 type LL = [number, number];
 const CAMPUS: LL = [36.77004, 126.93192];
 const ll = ([la, lo]: LL) => [lo, la] as [number, number];
@@ -37,14 +36,25 @@ const PAL = {
     shadow: "#000000", highlight: "#1f2633", accent: "#05070a", sky: "#05070b", horizon: "#1a2436", fog: "#070a10", light: 0.4,
     to: "#7a1f2a", from: "#1f3f7a", crossed: "#7a4a12", toCap: "#ff8a93", fromCap: "#9cc2ff", crossedCap: "#ffc477",
   },
+  // 밝은 지도 — 바탕·건물을 거의 흰색으로, 그림자로만 입체를 읽게
   light: {
-    bg: "#eef0f3", water: "#c9d6e3", green: "#dce5d8", road: "#ffffff", casing: "#d3d8df", place: "#7a8190", placeHalo: "#ffffff",
-    city: "#dde1e7", campus: "#d3d9e3", campusText: "#3a414d", halo: "#ffffff",
-    cap: "#ffffff", walk: "#ffffff", foot: "rgba(122,162,232,0.28)", footTo: "rgba(229,72,77,0.8)", footFrom: "rgba(59,130,246,0.7)",
-    shadow: "#8792a3", highlight: "#ffffff", accent: "#c3c9d2", sky: "#dce4ee", horizon: "#f3f5f8", fog: "#eef0f3", light: 0.36,
-    to: "#f0a29c", from: "#a9c4f2", crossed: "#f5c98a", toCap: "#e5484d", fromCap: "#3b82f6", crossedCap: "#f59e0b",
+    bg: "#ffffff", water: "#d4e4f4", green: "#eef4eb", road: "#eceff3", casing: "#e0e4ea", place: "#8a909c", placeHalo: "#ffffff",
+    city: "#f1f2f4", campus: "#eef1f5", campusText: "#2b313b", halo: "#ffffff",
+    cap: "#ffffff", walk: "#e2e6ec", foot: "rgba(20,30,50,0.10)", footTo: "rgba(229,72,77,0.7)", footFrom: "rgba(59,130,246,0.6)",
+    shadow: "#b3bbc7", highlight: "#ffffff", accent: "#e6e9ee", sky: "#f2f5f9", horizon: "#ffffff", fog: "#ffffff", light: 0.32,
+    to: "#f6b3ae", from: "#bcd3f7", crossed: "#f8d7a6", toCap: "#e5484d", fromCap: "#3b82f6", crossedCap: "#f59e0b",
+  },
+  // 실사 — 위성사진(Esri) 위에 캠퍼스 건물만 입체로
+  satellite: {
+    bg: "#0b0d10", water: "#0b0d10", green: "#0b0d10", road: "#ffffff", casing: "#000000", place: "#ffffff", placeHalo: "#000000",
+    city: "#d9d4ca", campus: "#e9e4da", campusText: "#ffffff", halo: "#000000",
+    cap: "#ffffff", walk: "rgba(255,255,255,0.5)", foot: "rgba(0,0,0,0.35)", footTo: "rgba(255,77,90,0.95)", footFrom: "rgba(96,160,255,0.9)",
+    shadow: "#000000", highlight: "#ffffff", accent: "#000000", sky: "#9fb8d6", horizon: "#dfe8f2", fog: "#cfd9e4", light: 0.3,
+    to: "#c2414c", from: "#3b6fd6", crossed: "#d08a2a", toCap: "#ff8a93", fromCap: "#9cc2ff", crossedCap: "#ffc477",
   },
 } as const;
+
+const isDarkLook = (t: Theme) => t !== "light";
 
 /** 캠퍼스를 감싸는 볼록 껍질 (그 안의 OSM 건물은 우리 건물로 대신 세운다) */
 function hull(): [number, number][] {
@@ -99,6 +109,12 @@ function setup(m: maplibregl.Map) {
   m.addSource("dem-shade", dem);
   m.setTerrain({ source: "dem", exaggeration: 1.4 });
   m.addLayer({ id: "hillshade", type: "hillshade", source: "dem-shade", paint: { "hillshade-exaggeration": 0.5 } }, "water");
+  // 실사용 위성사진 (다른 모양에선 꺼 둔다). 땅 위 칠하기보다 위, 도로·건물보다 아래.
+  m.addSource("sat", { type: "raster", tileSize: 256, maxzoom: 18,
+    tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"] });
+  const firstLine = m.getStyle().layers.find((l) => l.type === "line")?.id;
+  m.addLayer({ id: "sat", type: "raster", source: "sat", layout: { visibility: "none" },
+    paint: { "raster-saturation": -0.15, "raster-contrast": 0.05 } }, firstLine);
 
   const campusHull = { type: "Polygon" as const, coordinates: [hull()] };
   m.addLayer({ id: "city-3d", type: "fill-extrusion", source: "openmaptiles", "source-layer": "building", minzoom: 13,
@@ -189,7 +205,7 @@ function setup(m: maplibregl.Map) {
 
 /** 테마별 색 칠하기. 테마를 바꾸면 다시 부른다. */
 function paint(m: maplibregl.Map, theme: Theme) {
-  const P = PAL[theme];
+  const P = PAL[theme], dark = isDarkLook(theme), sat = theme === "satellite";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const set = (id: string, prop: string, v: unknown) => { if (m.getLayer(id)) (m.setPaintProperty as any)(id, prop, v); };
   set("background", "background-color", P.bg);
@@ -198,22 +214,27 @@ function paint(m: maplibregl.Map, theme: Theme) {
   for (const l of m.getStyle().layers) {
     if (l.type === "line" && l.id.startsWith("highway")) set(l.id, "line-color", l.id.includes("casing") ? P.casing : P.road);
     if (l.type === "symbol" && l.id.startsWith("place")) { set(l.id, "text-color", P.place); set(l.id, "text-halo-color", P.placeHalo); }
+    // 실사: 바탕 칠하기·도로·주변 입체 건물은 사진과 겹치니 끈다
+    const base = l.type === "fill" && l.id !== "building" && !l.id.startsWith("ov-") && !l.id.startsWith("campus");
+    if (base || (l.type === "line" && l.id.startsWith("highway")) || l.id === "hillshade" || l.id === "city-3d")
+      m.setLayoutProperty(l.id, "visibility", sat ? "none" : "visible");
   }
+  m.setLayoutProperty("sat", "visibility", sat ? "visible" : "none");
   set("hillshade", "hillshade-shadow-color", P.shadow);
   set("hillshade", "hillshade-highlight-color", P.highlight);
   set("hillshade", "hillshade-accent-color", P.accent);
   set("city-3d", "fill-extrusion-color", P.city);
   set("campus-walk", "line-color", P.walk);
-  set("campus-walk", "line-opacity", theme === "dark" ? 0.9 : 0.95);
-  set("ov-flow", "line-opacity", theme === "dark" ? 0.7 : 0.6);
+  set("campus-walk", "line-opacity", dark ? 0.9 : 0.95);
+  set("ov-flow", "line-opacity", dark ? 0.7 : 0.6);
   set("campus-label", "text-color", P.campusText);
   set("campus-label", "text-halo-color", P.halo);
   set("campus-label", "text-halo-width", 1.4);
   for (let i = 0; i < OP_MAX; i++) {
-    set(`op${i}-glow`, "line-opacity", theme === "dark" ? 0.6 : 0.35);
-    set(`op${i}-core`, "line-color", theme === "dark" ? "#ffd6a0" : "#e46a00");
+    set(`op${i}-glow`, "line-opacity", dark ? 0.6 : 0.35);
+    set(`op${i}-core`, "line-color", dark ? "#ffd6a0" : "#e46a00");
   }
-  m.setLight({ anchor: "map", color: theme === "dark" ? "#e6ecff" : "#ffffff", intensity: P.light, position: [1.4, 215, 38] });
+  m.setLight({ anchor: "map", color: dark ? "#e6ecff" : "#ffffff", intensity: P.light, position: [1.4, 215, 38] });
   m.setSky({ "sky-color": P.sky, "horizon-color": P.horizon, "fog-color": P.fog,
              "fog-ground-blend": 0.45, "horizon-fog-blend": 0.8, "sky-horizon-blend": 0.6, "atmosphere-blend": 0 });
 }
@@ -294,7 +315,7 @@ function useApexOverlays(
     markers.current = [];
     const add = (mk: maplibregl.Marker) => markers.current.push(mk);
     const P = PAL[theme];
-    const dark = theme === "dark";
+    const dark = isDarkLook(theme);
     const primary = token("--map-route"), ink = token("--map-ink"), shortcut = token("--map-shortcut");
     const crossed = route ? crossedBuildings(route) : [];
 
@@ -471,7 +492,9 @@ export const APEX_KIT: MapKit = {
   useOverlays: useApexOverlays as MapKit["useOverlays"],
   useOpening: (map, o) => useApexOpening(map, o),
   panTo: (map, at) => (map as maplibregl.Map).easeTo({ center: ll(at), duration: 600 }),
-  credit: "지도 © OpenFreeMap · OpenMapTiles · OpenStreetMap 기여자",
+  credit: (theme) => theme === "satellite"
+    ? "위성 © Esri, Maxar · 지도 © OpenFreeMap · OpenStreetMap 기여자"
+    : "지도 © OpenFreeMap · OpenMapTiles · OpenStreetMap 기여자",
   themeKey: "theme-choice-3d", themeDefault: "dark",
   hideUntilOpening: false,
 };
